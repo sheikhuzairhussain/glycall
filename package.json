@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "gen": "bunx @hey-api/openapi-ts -i https://api.staging.glyphic.ai/openapi.json -o src/lib/glyphic -c @hey-api/client-next && biome format --write src/lib/glyphic"
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.3",
@@ -38,6 +39,7 @@
     "client-only": "^0.0.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "dayjs": "^1.11.19",
     "embla-carousel-react": "^8.6.0",
     "i": "^0.3.7",
     "lucide-react": "^0.562.0",

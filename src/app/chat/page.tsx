@@ -3,9 +3,8 @@
 import { useChat } from "@ai-sdk/react";
 import type { ToolUIPart } from "ai";
 import { DefaultChatTransport } from "ai";
-import { CheckIcon, CloudIcon, GlobeIcon, MicIcon } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
+import { PhoneIcon, InfoIcon } from "lucide-react";
+import { useState, useMemo } from "react";
 import {
   Conversation,
   ConversationContent,
@@ -19,34 +18,12 @@ import {
   MessageResponse,
 } from "@/components/ai-elements/message";
 import {
-  ModelSelector,
-  ModelSelectorContent,
-  ModelSelectorEmpty,
-  ModelSelectorGroup,
-  ModelSelectorInput,
-  ModelSelectorItem,
-  ModelSelectorList,
-  ModelSelectorLogo,
-  ModelSelectorLogoGroup,
-  ModelSelectorName,
-  ModelSelectorTrigger,
-} from "@/components/ai-elements/model-selector";
-import {
   PromptInput,
-  PromptInputActionAddAttachments,
-  PromptInputActionMenu,
-  PromptInputActionMenuContent,
-  PromptInputActionMenuTrigger,
-  PromptInputAttachment,
-  PromptInputAttachments,
   PromptInputBody,
-  PromptInputButton,
   PromptInputFooter,
-  PromptInputHeader,
   type PromptInputMessage,
   PromptInputSubmit,
   PromptInputTextarea,
-  PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
 import {
   Reasoning,
@@ -71,51 +48,85 @@ const toolDescriptions: Record<
     icon: React.ReactNode;
   }
 > = {
-  "get-weather": {
-    title: "Weather Info",
-    runningMessage: "Pulling weather info from Open-Meteo",
-    icon: <CloudIcon className="size-4 text-blue-500" />,
+  "list-calls": {
+    title: "Call Search",
+    runningMessage: "Searching calls in Glyphic...",
+    icon: <PhoneIcon className="size-4 text-emerald-500" />,
+  },
+  "get-call-info": {
+    title: "Call Details",
+    runningMessage: "Fetching call details...",
+    icon: <InfoIcon className="size-4 text-blue-500" />,
   },
 };
 
-const models = [
-  {
-    id: "claude-sonnet-4-20250514",
-    name: "Claude 4 Sonnet",
-    chef: "Anthropic",
-    chefSlug: "anthropic",
-    providers: ["anthropic", "azure", "google", "amazon-bedrock"],
-  },
-  {
-    id: "gemini-2.0-flash-exp",
-    name: "Gemini 2.0 Flash",
-    chef: "Google",
-    chefSlug: "google",
-    providers: ["google"],
-  },
+const initialSuggestions = [
+  "Get me a list of all calls from the last two weeks",
+  "Find all calls with jordan@freetrade.io",
+  "Who did adam@glyphic.ai talk to in his last call?",
+  "Summarize the calls we had in September",
 ];
 
-const suggestions = [
-  "What's the weather in San Francisco?",
-  "How's the weather in New York today?",
-  "Tell me the temperature in London",
-  "What's it like outside in Tokyo?",
-];
+// Tool ID for suggest-follow-ups (matches the variable name, not the tool id)
+const SUGGEST_TOOL_ID = "suggestFollowUpsTool";
 
-const Example = () => {
-  const [model, setModel] = useState<string>(models[0].id);
-  const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
+const GlyphicChat = () => {
   const [inputValue, setInputValue] = useState<string>("");
-  const [useWebSearch, setUseWebSearch] = useState<boolean>(false);
-  const [useMicrophone, setUseMicrophone] = useState<boolean>(false);
+
+  // Get browser timezone
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
+      body: { timezone },
     }),
   });
 
-  const selectedModelData = models.find((m) => m.id === model);
+  // Get suggestions from the last suggest-follow-ups tool output
+  const currentSuggestions = useMemo(() => {
+    if (messages.length === 0) {
+      return initialSuggestions;
+    }
+
+    // Find the last assistant message with suggest-follow-ups tool output
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const message = messages[i];
+      if (message.role === "assistant" && message.parts) {
+        // Find the suggest-follow-ups tool part
+        for (const part of message.parts) {
+          if (!part.type.startsWith("tool-")) continue;
+
+          const toolPart = part as ToolUIPart;
+          const toolId = toolPart.type.replace("tool-", "");
+
+          if (toolId === SUGGEST_TOOL_ID && toolPart.output) {
+            // Handle both object and string (JSON) output
+            let output: { suggestions?: string[] };
+            if (typeof toolPart.output === "string") {
+              try {
+                output = JSON.parse(toolPart.output);
+              } catch {
+                continue;
+              }
+            } else {
+              output = toolPart.output as { suggestions?: string[] };
+            }
+
+            if (
+              output.suggestions &&
+              Array.isArray(output.suggestions) &&
+              output.suggestions.length > 0
+            ) {
+              return output.suggestions;
+            }
+          }
+        }
+      }
+    }
+
+    return initialSuggestions;
+  }, [messages]);
 
   // Map status to UI status
   const uiStatus =
@@ -128,20 +139,11 @@ const Example = () => {
           : "ready";
 
   const handleSubmit = (message: PromptInputMessage) => {
-    const hasText = Boolean(message.text);
-    const hasAttachments = Boolean(message.files?.length);
-
-    if (!(hasText || hasAttachments)) {
+    if (!message.text?.trim()) {
       return;
     }
 
-    if (message.files?.length) {
-      toast.success("Files attached", {
-        description: `${message.files.length} file(s) attached to message`,
-      });
-    }
-
-    sendMessage({ text: message.text || "" });
+    sendMessage({ text: message.text });
     setInputValue("");
   };
 
@@ -169,18 +171,21 @@ const Example = () => {
   };
 
   // Helper to get tool parts (tool parts have type starting with "tool-")
+  // Exclude the suggest-follow-ups tool from display
   const getToolParts = (message: (typeof messages)[number]) => {
     if (message.parts) {
-      return message.parts.filter((part) =>
-        part.type.startsWith("tool-"),
-      ) as ToolUIPart[];
+      return message.parts.filter((part) => {
+        if (!part.type.startsWith("tool-")) return false;
+        const toolId = part.type.replace("tool-", "");
+        return toolId !== SUGGEST_TOOL_ID;
+      }) as ToolUIPart[];
     }
     return [];
   };
 
   // Get user-friendly tool info
   const getToolInfo = (toolType: string) => {
-    // toolType is like "tool-get-weather", extract "get-weather"
+    // toolType is like "tool-list-calls", extract "list-calls"
     const toolId = toolType.replace("tool-", "");
     return (
       toolDescriptions[toolId] || {
@@ -267,108 +272,27 @@ const Example = () => {
         <ConversationScrollButton />
       </Conversation>
       <div className="grid shrink-0 gap-4 pt-4">
-        <Suggestions className="px-4">
-          {suggestions.map((suggestion) => (
-            <Suggestion
-              key={suggestion}
-              onClick={() => handleSuggestionClick(suggestion)}
-              suggestion={suggestion}
-            />
-          ))}
-        </Suggestions>
+        {uiStatus === "ready" && (
+          <Suggestions className="px-4" key={currentSuggestions.join("|")}>
+            {currentSuggestions.map((suggestion, index) => (
+              <Suggestion
+                key={`${index}-${suggestion}`}
+                onClick={() => handleSuggestionClick(suggestion)}
+                suggestion={suggestion}
+              />
+            ))}
+          </Suggestions>
+        )}
         <div className="w-full px-4 pb-4">
-          <PromptInput globalDrop multiple onSubmit={handleSubmit}>
-            <PromptInputHeader>
-              <PromptInputAttachments>
-                {(attachment) => <PromptInputAttachment data={attachment} />}
-              </PromptInputAttachments>
-            </PromptInputHeader>
+          <PromptInput onSubmit={handleSubmit}>
             <PromptInputBody>
               <PromptInputTextarea
                 onChange={(event) => setInputValue(event.target.value)}
+                placeholder="Ask about your sales calls..."
                 value={inputValue}
               />
             </PromptInputBody>
             <PromptInputFooter>
-              <PromptInputTools>
-                <PromptInputActionMenu>
-                  <PromptInputActionMenuTrigger />
-                  <PromptInputActionMenuContent>
-                    <PromptInputActionAddAttachments />
-                  </PromptInputActionMenuContent>
-                </PromptInputActionMenu>
-                <PromptInputButton
-                  onClick={() => setUseMicrophone(!useMicrophone)}
-                  variant={useMicrophone ? "default" : "ghost"}
-                >
-                  <MicIcon size={16} />
-                  <span className="sr-only">Microphone</span>
-                </PromptInputButton>
-                <PromptInputButton
-                  onClick={() => setUseWebSearch(!useWebSearch)}
-                  variant={useWebSearch ? "default" : "ghost"}
-                >
-                  <GlobeIcon size={16} />
-                  <span>Search</span>
-                </PromptInputButton>
-                <ModelSelector
-                  onOpenChange={setModelSelectorOpen}
-                  open={modelSelectorOpen}
-                >
-                  <ModelSelectorTrigger asChild>
-                    <PromptInputButton>
-                      {selectedModelData?.chefSlug && (
-                        <ModelSelectorLogo
-                          provider={selectedModelData.chefSlug}
-                        />
-                      )}
-                      {selectedModelData?.name && (
-                        <ModelSelectorName>
-                          {selectedModelData.name}
-                        </ModelSelectorName>
-                      )}
-                    </PromptInputButton>
-                  </ModelSelectorTrigger>
-                  <ModelSelectorContent>
-                    <ModelSelectorInput placeholder="Search models..." />
-                    <ModelSelectorList>
-                      <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
-                      {["OpenAI", "Anthropic", "Google"].map((chef) => (
-                        <ModelSelectorGroup key={chef} heading={chef}>
-                          {models
-                            .filter((m) => m.chef === chef)
-                            .map((m) => (
-                              <ModelSelectorItem
-                                key={m.id}
-                                onSelect={() => {
-                                  setModel(m.id);
-                                  setModelSelectorOpen(false);
-                                }}
-                                value={m.id}
-                              >
-                                <ModelSelectorLogo provider={m.chefSlug} />
-                                <ModelSelectorName>{m.name}</ModelSelectorName>
-                                <ModelSelectorLogoGroup>
-                                  {m.providers.map((provider) => (
-                                    <ModelSelectorLogo
-                                      key={provider}
-                                      provider={provider}
-                                    />
-                                  ))}
-                                </ModelSelectorLogoGroup>
-                                {model === m.id ? (
-                                  <CheckIcon className="ml-auto size-4" />
-                                ) : (
-                                  <div className="ml-auto size-4" />
-                                )}
-                              </ModelSelectorItem>
-                            ))}
-                        </ModelSelectorGroup>
-                      ))}
-                    </ModelSelectorList>
-                  </ModelSelectorContent>
-                </ModelSelector>
-              </PromptInputTools>
               <PromptInputSubmit
                 disabled={!inputValue.trim() || uiStatus === "streaming"}
                 status={uiStatus}
@@ -381,4 +305,4 @@ const Example = () => {
   );
 };
 
-export default Example;
+export default GlyphicChat;

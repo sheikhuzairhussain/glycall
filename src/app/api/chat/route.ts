@@ -1,17 +1,24 @@
 import { handleChatStream } from "@mastra/ai-sdk";
 import { toAISdkV5Messages } from "@mastra/ai-sdk/ui";
+import { RequestContext } from "@mastra/core/request-context";
 import { createUIMessageStreamResponse } from "ai";
 import { NextResponse } from "next/server";
 import { mastra } from "@/mastra";
 
 const THREAD_ID = "example-user-id";
-const RESOURCE_ID = "weather-chat";
+const RESOURCE_ID = "glyphic-chat";
 
 export async function POST(req: Request) {
   const params = await req.json();
+
+  const timezone = params.timezone || "UTC";
+
+  const requestContext = new RequestContext();
+  requestContext.set("timezone", timezone);
+
   const stream = await handleChatStream({
     mastra,
-    agentId: "weather-agent",
+    agentId: "glyphic-agent",
     params: {
       ...params,
       memory: {
@@ -19,13 +26,15 @@ export async function POST(req: Request) {
         thread: THREAD_ID,
         resource: RESOURCE_ID,
       },
+      requestContext,
     },
   });
+
   return createUIMessageStreamResponse({ stream });
 }
 
 export async function GET() {
-  const memory = await mastra.getAgentById("weather-agent").getMemory();
+  const memory = await mastra.getAgentById("glyphic-agent").getMemory();
   let response = null;
 
   try {
