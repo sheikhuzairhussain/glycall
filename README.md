@@ -99,7 +99,7 @@ flowchart TB
 
 ### Environment Variables
 
-Create a `.env.local` file with the required variables:
+Create a `.env` file with the required variables:
 
 - `ANTHROPIC_API_KEY` — Anthropic API key
 - `GLYPHIC_API_KEY` — Glyphic API key
