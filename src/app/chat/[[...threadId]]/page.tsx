@@ -9,7 +9,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CallDetail } from "@/components/ai-elements/call-detail";
-// Generative UI components
 import { CallList } from "@/components/ai-elements/call-list";
 import {
   Conversation,
@@ -45,7 +44,6 @@ import {
   SuggestionsGrid,
 } from "@/components/ai-elements/suggestion";
 import { Transcript } from "@/components/ai-elements/transcript";
-// Tool input types for type-safe casting
 import type {
   ShowCallInfoInput,
   ShowCallListInput,
@@ -53,6 +51,9 @@ import type {
   ShowTranscriptInput,
 } from "@/mastra/tools/ui";
 import { useTRPC } from "@/trpc/client";
+
+/** Extracts tool ID from a tool part type (e.g., "tool-myTool" -> "myTool") */
+const getToolId = (partType: string) => partType.replace("tool-", "");
 
 const initialSuggestions = [
   "Get me a list of all calls from the last two weeks",
@@ -80,8 +81,6 @@ const SERVER_TOOL_IDS: Record<string, { loading: string; done: string }> = {
     done: "Retrieved call information",
   },
 };
-
-const RESOURCE_ID = "glyphic-chat";
 
 // Welcome screen component
 function WelcomeScreen({
@@ -150,7 +149,9 @@ export default function ChatPage({
         queryClient.invalidateQueries({
           queryKey: trpc.threads.list.queryKey(),
         });
-        // Store the pending message in sessionStorage for the thread page to pick up
+        // TODO: This sessionStorage workaround is used to pass the initial message
+        // to the new thread page after navigation. Consider using URL search params,
+        // React Context, or a state management solution for a cleaner approach.
         const message = pendingMessageRef.current;
         if (message) {
           sessionStorage.setItem(`pending-message-${thread.id}`, message);
@@ -225,7 +226,7 @@ export default function ChatPage({
           if (!part.type.startsWith("tool-")) continue;
 
           const toolPart = part as ToolUIPart;
-          const toolId = toolPart.type.replace("tool-", "");
+          const toolId = getToolId(toolPart.type);
 
           if (toolId === SUGGEST_TOOL_ID && toolPart.output) {
             let output: { suggestions?: string[] };
@@ -273,7 +274,6 @@ export default function ChatPage({
       setInputValue("");
 
       createThreadMutation.mutate({
-        resourceId: RESOURCE_ID,
         title: text.slice(0, 50) + (text.length > 50 ? "..." : ""),
       });
     },
@@ -310,7 +310,7 @@ export default function ChatPage({
 
     const hasCompletedDisplayTools = message.parts.some((part) => {
       if (!part.type.startsWith("tool-")) return false;
-      const toolId = part.type.replace("tool-", "");
+      const toolId = getToolId(part.type);
       const toolPart = part as ToolUIPart;
       return (
         CLIENT_TOOL_IDS.includes(toolId) &&
@@ -341,7 +341,7 @@ export default function ChatPage({
     if (message.parts) {
       return message.parts.filter((part) => {
         if (!part.type.startsWith("tool-")) return false;
-        const toolId = part.type.replace("tool-", "");
+        const toolId = getToolId(part.type);
         return CLIENT_TOOL_IDS.includes(toolId);
       }) as ToolUIPart[];
     }
@@ -353,7 +353,7 @@ export default function ChatPage({
     if (message.parts) {
       return message.parts.filter((part) => {
         if (!part.type.startsWith("tool-")) return false;
-        const toolId = part.type.replace("tool-", "");
+        const toolId = getToolId(part.type);
         return toolId in SERVER_TOOL_IDS;
       }) as ToolUIPart[];
     }
@@ -362,7 +362,7 @@ export default function ChatPage({
 
   // Render server tool status
   const renderServerTool = (part: ToolUIPart, key: string) => {
-    const toolId = part.type.replace("tool-", "");
+    const toolId = getToolId(part.type);
     const labels = SERVER_TOOL_IDS[toolId];
     if (!labels) return null;
 
@@ -382,7 +382,7 @@ export default function ChatPage({
 
   // Render client tool as custom UI component
   const renderClientTool = (part: ToolUIPart, key: string) => {
-    const toolId = part.type.replace("tool-", "");
+    const toolId = getToolId(part.type);
 
     if (part.state === "output-error") {
       return (

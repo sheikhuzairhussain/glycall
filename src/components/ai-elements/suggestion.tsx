@@ -1,10 +1,10 @@
 "use client";
 
+import { AnimatePresence, motion, type Variants } from "motion/react";
+import { Children, type ComponentProps, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence, type Variants } from "motion/react";
-import { Children, type ComponentProps, type ReactNode } from "react";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },

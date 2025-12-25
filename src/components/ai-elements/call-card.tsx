@@ -4,12 +4,12 @@ import { BuildingIcon, CalendarIcon, ClockIcon } from "lucide-react";
 import type { ComponentProps } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { CallStatusBadge, type CallStatus } from "./call-status-badge";
+import { cn, formatDuration } from "@/lib/utils";
+import { type CallStatus, CallStatusBadge } from "./call-status-badge";
 import {
+  type Participant,
   ParticipantAvatar,
   ParticipantListHoverCard,
-  type Participant,
 } from "./participant-hover-card";
 
 export type { CallStatus };
@@ -24,20 +24,6 @@ export type CallCardProps = ComponentProps<"button"> & {
   participants?: Participant[];
   onClick?: () => void;
 };
-
-function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  if (minutes > 0) {
-    return `${minutes}m ${secs}s`;
-  }
-  return `${secs}s`;
-}
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -106,7 +92,7 @@ export const CallCard = ({
         {duration != null && (
           <span className="flex items-center gap-1">
             <ClockIcon className="size-3" />
-            {formatDuration(duration)}
+            {formatDuration(duration, "short")}
           </span>
         )}
       </div>

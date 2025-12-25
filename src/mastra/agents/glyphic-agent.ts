@@ -1,14 +1,14 @@
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
-import { getCallInfoTool, listCallsTool } from "../tools/glyphic/index";
-import {
-  showCallListTool,
-  showCallInfoTool,
-  showTranscriptTool,
-  showParticipantsTool,
-} from "../tools/ui/index";
 import { getCurrentTimeTool } from "../tools/get-current-time";
+import { getCallInfoTool, listCallsTool } from "../tools/glyphic/index";
 import { suggestFollowUpsTool } from "../tools/suggest-follow-ups";
+import {
+  showCallInfoTool,
+  showCallListTool,
+  showParticipantsTool,
+  showTranscriptTool,
+} from "../tools/ui/index";
 
 const INSTRUCTIONS = `
 You are a specialized sales call analyst that helps users search and analyze their historical sales calls stored in Glyphic.

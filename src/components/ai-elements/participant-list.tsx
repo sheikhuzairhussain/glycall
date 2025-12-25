@@ -1,5 +1,13 @@
 "use client";
 
+import {
+  BuildingIcon,
+  CheckIcon,
+  CopyIcon,
+  MailIcon,
+  UsersIcon,
+} from "lucide-react";
+import { type ComponentProps, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,14 +18,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import {
-  UsersIcon,
-  MailIcon,
-  BuildingIcon,
-  CopyIcon,
-  CheckIcon,
-} from "lucide-react";
-import { type ComponentProps, useState } from "react";
 
 export type Participant = {
   name?: string | null;

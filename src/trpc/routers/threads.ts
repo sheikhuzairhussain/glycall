@@ -1,16 +1,18 @@
-import { z } from "zod";
 import { v4 as uuid } from "uuid";
-import { baseProcedure, createTRPCRouter } from "../init";
+import { z } from "zod";
+import { RESOURCE_ID } from "@/lib/constants";
 import { mastra } from "@/mastra";
+import { baseProcedure, createTRPCRouter } from "../init";
 
 export const threadsRouter = createTRPCRouter({
   list: baseProcedure
     .input(
-      z.object({
-        resourceId: z.string(),
-        page: z.number().default(0),
-        perPage: z.number().default(50),
-      }),
+      z
+        .object({
+          page: z.number().default(0),
+          perPage: z.number().default(50),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const storage = mastra.getStorage();
@@ -35,9 +37,9 @@ export const threadsRouter = createTRPCRouter({
       }
 
       const result = await memoryStore.listThreadsByResourceId({
-        resourceId: input.resourceId,
-        page: input.page,
-        perPage: input.perPage,
+        resourceId: RESOURCE_ID,
+        page: input?.page ?? 0,
+        perPage: input?.perPage ?? 50,
         orderBy: { field: "updatedAt", direction: "DESC" },
       });
 
@@ -73,7 +75,6 @@ export const threadsRouter = createTRPCRouter({
   create: baseProcedure
     .input(
       z.object({
-        resourceId: z.string(),
         title: z.string().optional(),
       }),
     )
@@ -94,7 +95,7 @@ export const threadsRouter = createTRPCRouter({
       const thread = await memoryStore.saveThread({
         thread: {
           id: uuid(),
-          resourceId: input.resourceId,
+          resourceId: RESOURCE_ID,
           title: input.title,
           createdAt: now,
           updatedAt: now,

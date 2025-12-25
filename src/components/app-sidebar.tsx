@@ -1,6 +1,7 @@
 "use client";
 
-import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
 import {
   MessageSquare,
   MoreHorizontal,
@@ -10,9 +11,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-import { Button } from "@/components/ui/button";
+import * as React from "react";
 import { useDeleteThread } from "@/components/delete-thread-dialog";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +21,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sidebar,
   SidebarContent,
@@ -32,12 +32,9 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
-import { useQuery } from "@tanstack/react-query";
-
-// TODO: Replace with actual user ID from auth
-const RESOURCE_ID = "glyphic-chat";
 
 type Thread = {
   id: string;
@@ -47,11 +44,10 @@ type Thread = {
 };
 
 function groupThreadsByDate(threads: Thread[]) {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterday = new Date(today.getTime() - 86400000);
-  const sevenDaysAgo = new Date(today.getTime() - 7 * 86400000);
-  const thirtyDaysAgo = new Date(today.getTime() - 30 * 86400000);
+  const today = dayjs().startOf("day");
+  const yesterday = today.subtract(1, "day");
+  const sevenDaysAgo = today.subtract(7, "day");
+  const thirtyDaysAgo = today.subtract(30, "day");
 
   const groups: {
     today: Thread[];
@@ -68,14 +64,17 @@ function groupThreadsByDate(threads: Thread[]) {
   };
 
   for (const thread of threads) {
-    const threadDate = new Date(thread.updatedAt);
-    if (threadDate >= today) {
+    const threadDate = dayjs(thread.updatedAt);
+    if (threadDate.isAfter(today) || threadDate.isSame(today, "day")) {
       groups.today.push(thread);
-    } else if (threadDate >= yesterday) {
+    } else if (
+      threadDate.isAfter(yesterday) ||
+      threadDate.isSame(yesterday, "day")
+    ) {
       groups.yesterday.push(thread);
-    } else if (threadDate >= sevenDaysAgo) {
+    } else if (threadDate.isAfter(sevenDaysAgo)) {
       groups.previous7Days.push(thread);
-    } else if (threadDate >= thirtyDaysAgo) {
+    } else if (threadDate.isAfter(thirtyDaysAgo)) {
       groups.previous30Days.push(thread);
     } else {
       groups.older.push(thread);
@@ -181,7 +180,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const { data, isLoading } = useQuery(
     trpc.threads.list.queryOptions({
-      resourceId: RESOURCE_ID,
       page: 0,
       perPage: 50,
     }),

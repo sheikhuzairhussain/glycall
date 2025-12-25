@@ -1,5 +1,16 @@
 "use client";
 
+import {
+  BuildingIcon,
+  CalendarIcon,
+  ChevronDownIcon,
+  ClockIcon,
+  ExternalLinkIcon,
+  FileTextIcon,
+  UsersIcon,
+} from "lucide-react";
+import type { ComponentProps } from "react";
+import { Streamdown } from "streamdown";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,25 +20,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import { cn, formatDuration } from "@/lib/utils";
+import { type CallStatus, CallStatusBadge } from "./call-status-badge";
 import {
-  CalendarIcon,
-  ClockIcon,
-  BuildingIcon,
-  ExternalLinkIcon,
-  ChevronDownIcon,
-  FileTextIcon,
-  UsersIcon,
-} from "lucide-react";
-import type { ComponentProps } from "react";
-import { Streamdown } from "streamdown";
-import { CallStatusBadge, type CallStatus } from "./call-status-badge";
-import {
-  ParticipantHoverCard,
-  getInitials,
   getAvatarColor,
+  getInitials,
   getParticipantIdentifier,
   type Participant,
+  ParticipantHoverCard,
 } from "./participant-hover-card";
 
 export type { CallStatus };
@@ -47,20 +47,6 @@ export type CallDetailData = {
 export type CallDetailProps = ComponentProps<"div"> & {
   call: CallDetailData;
 };
-
-function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${secs}s`;
-  }
-  if (minutes > 0) {
-    return `${minutes}m ${secs}s`;
-  }
-  return `${secs}s`;
-}
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);

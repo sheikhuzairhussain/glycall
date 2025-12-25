@@ -8,7 +8,7 @@ import {
 import { type ComponentProps, useMemo, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatDuration } from "@/lib/utils";
 
 export type TranscriptTurn = {
   party_id: number;
@@ -60,27 +60,6 @@ function getParticipantColor(participantId: number): string {
   return colors[participantId % colors.length];
 }
 
-function formatDuration(totalSeconds: number): string {
-  const hrs = Math.floor(totalSeconds / 3600);
-  const mins = Math.floor((totalSeconds % 3600) / 60);
-  const secs = Math.floor(totalSeconds % 60);
-
-  const parts: string[] = [];
-  if (hrs > 0) {
-    parts.push(`${hrs} ${hrs === 1 ? "hour" : "hours"}`);
-  }
-  if (mins > 0) {
-    parts.push(`${mins} ${mins === 1 ? "minute" : "minutes"}`);
-  }
-  if (secs > 0 || parts.length === 0) {
-    parts.push(`${secs} ${secs === 1 ? "second" : "seconds"}`);
-  }
-
-  if (parts.length === 1) return parts[0];
-  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
-  return `${parts[0]}, ${parts[1]} and ${parts[2]}`;
-}
-
 function formatTimestamp(timestamp: string): string {
   // Parse MM:SS or HH:MM:SS format
   const timeMatch = timestamp.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
@@ -94,7 +73,7 @@ function formatTimestamp(timestamp: string): string {
       // MM:SS format
       totalSeconds = Number(first) * 60 + Number(second);
     }
-    return formatDuration(totalSeconds);
+    return formatDuration(totalSeconds, "long");
   }
 
   return timestamp;

@@ -3,10 +3,8 @@ import { toAISdkV5Messages } from "@mastra/ai-sdk/ui";
 import { RequestContext } from "@mastra/core/request-context";
 import { createUIMessageStreamResponse } from "ai";
 import { NextResponse } from "next/server";
+import { DEFAULT_THREAD_ID, RESOURCE_ID } from "@/lib/constants";
 import { mastra } from "@/mastra";
-
-const DEFAULT_THREAD_ID = "example-user-id";
-const RESOURCE_ID = "glyphic-chat";
 
 export async function POST(req: Request) {
   const params = await req.json();
@@ -47,7 +45,7 @@ export async function GET(req: Request) {
       resourceId: RESOURCE_ID,
     });
   } catch {
-    console.log("No previous messages found.");
+    // No previous messages found for this thread
   }
 
   const uiMessages = toAISdkV5Messages(response?.messages || []);
