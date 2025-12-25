@@ -12,7 +12,11 @@ export type CallPreview = {
   duration?: number | null;
   status: { code: CallStatus };
   companies?: Array<{ name?: string | null; domain: string }>;
-  participants?: Array<{ name?: string | null; email?: string | null; id: number }>;
+  participants?: Array<{
+    name?: string | null;
+    email?: string | null;
+    id: number;
+  }>;
 };
 
 export type CallListProps = ComponentProps<"div"> & {
@@ -104,9 +108,9 @@ export const CallList = ({
 // Skeleton for loading state
 export const CallListSkeleton = ({ count = 4 }: { count?: number }) => (
   <div className="grid gap-3 sm:grid-cols-2">
-    {Array.from({ length: count }).map((_, i) => (
+    {Array.from({ length: count }).map((i) => (
       <div
-        key={i}
+        key={`call-skeleton-${i}`}
         className="flex flex-col gap-3 rounded-lg border bg-card p-4 animate-pulse"
       >
         <div className="flex items-start justify-between gap-2">
@@ -129,4 +133,3 @@ export const CallListSkeleton = ({ count = 4 }: { count?: number }) => (
     ))}
   </div>
 );
-

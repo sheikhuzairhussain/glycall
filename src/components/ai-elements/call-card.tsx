@@ -1,36 +1,48 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
 import {
-  CalendarIcon,
-  ClockIcon,
-  BuildingIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  LoaderIcon,
-  AlertCircleIcon,
   BanIcon,
+  BuildingIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  LoaderIcon,
+  XCircleIcon,
 } from "lucide-react";
 import type { ComponentProps } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-export type CallStatus = "queued" | "in_progress" | "completed" | "failed" | "cancelled";
+export type CallStatus =
+  | "queued"
+  | "in_progress"
+  | "completed"
+  | "failed"
+  | "cancelled";
 
-export type CallCardProps = ComponentProps<"div"> & {
+export type CallCardProps = ComponentProps<"button"> & {
   id: string;
   title: string;
   startTime: string;
   duration?: number | null;
   status: CallStatus;
   companies?: Array<{ name?: string | null; domain: string }>;
-  participants?: Array<{ name?: string | null; email?: string | null; id: number }>;
+  participants?: Array<{
+    name?: string | null;
+    email?: string | null;
+    id: number;
+  }>;
   onClick?: () => void;
 };
 
 const statusConfig: Record<
   CallStatus,
-  { label: string; icon: React.ReactNode; variant: "default" | "secondary" | "destructive" | "outline" }
+  {
+    label: string;
+    icon: React.ReactNode;
+    variant: "default" | "secondary" | "destructive" | "outline";
+  }
 > = {
   completed: {
     label: "Completed",
@@ -76,7 +88,9 @@ function formatDuration(seconds: number): string {
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+  );
 
   if (diffDays === 0) {
     return `Today at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
@@ -85,9 +99,17 @@ function formatDate(dateString: string): string {
     return `Yesterday at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
   }
   if (diffDays < 7) {
-    return date.toLocaleDateString([], { weekday: "long", hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleDateString([], {
+      weekday: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
-  return date.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function getInitials(name?: string | null, email?: string | null): string {
@@ -150,7 +172,8 @@ export const CallCard = ({
   const remainingCount = (participants?.length || 0) - 4;
 
   return (
-    <div
+    <button
+      type="button"
       className={cn(
         "group relative flex flex-col gap-3 rounded-lg border bg-card p-4 transition-all",
         onClick && "cursor-pointer hover:border-primary/50 hover:shadow-md",
@@ -161,7 +184,9 @@ export const CallCard = ({
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-medium text-sm leading-tight line-clamp-2">{title}</h3>
+        <h3 className="font-medium text-sm leading-tight line-clamp-2">
+          {title}
+        </h3>
         <Badge variant={statusInfo.variant} className="shrink-0 gap-1 text-xs">
           {statusInfo.icon}
           {statusInfo.label}
@@ -191,7 +216,11 @@ export const CallCard = ({
                 key={participant.id}
                 className={cn(
                   "size-6 border-2 border-background text-[10px]",
-                  getAvatarColor(participant.email || participant.name || String(participant.id)),
+                  getAvatarColor(
+                    participant.email ||
+                      participant.name ||
+                      String(participant.id),
+                  ),
                 )}
               >
                 <AvatarFallback className="bg-transparent text-white">
@@ -207,7 +236,9 @@ export const CallCard = ({
           </div>
           <span className="text-xs text-muted-foreground">
             {participants?.length === 1
-              ? displayParticipants[0].name || displayParticipants[0].email || "1 participant"
+              ? displayParticipants[0].name ||
+                displayParticipants[0].email ||
+                "1 participant"
               : `${participants?.length} participants`}
           </span>
         </div>
@@ -217,14 +248,17 @@ export const CallCard = ({
       {companies && companies.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {companies.map((company) => (
-            <Badge key={company.domain} variant="outline" className="gap-1 text-xs font-normal">
+            <Badge
+              key={company.domain}
+              variant="outline"
+              className="gap-1 text-xs font-normal"
+            >
               <BuildingIcon className="size-3" />
               {company.name || company.domain}
             </Badge>
           ))}
         </div>
       )}
-    </div>
+    </button>
   );
 };
-

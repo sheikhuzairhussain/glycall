@@ -1,14 +1,23 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ToolUIPart } from "ai";
 import { DefaultChatTransport } from "ai";
 import { Loader2, Sparkles } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useState, useMemo, use, useEffect, useRef, useCallback } from "react";
-import { useTRPC } from "@/trpc/client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  CallDetail,
+  CallDetailSkeleton,
+} from "@/components/ai-elements/call-detail";
+import {
+  CallInsights,
+  CallInsightsSkeleton,
+} from "@/components/ai-elements/call-insights";
+// Generative UI components
+import { CallList, CallListSkeleton } from "@/components/ai-elements/call-list";
 import {
   Conversation,
   ConversationContent,
@@ -21,6 +30,10 @@ import {
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
+import {
+  ParticipantList,
+  ParticipantListSkeleton,
+} from "@/components/ai-elements/participant-list";
 import {
   PromptInput,
   PromptInputBody,
@@ -35,34 +48,19 @@ import {
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
-
-// Generative UI components
-import { CallList, CallListSkeleton } from "@/components/ai-elements/call-list";
-import {
-  CallDetail,
-  CallDetailSkeleton,
-} from "@/components/ai-elements/call-detail";
 import {
   Transcript,
   TranscriptSkeleton,
 } from "@/components/ai-elements/transcript";
-import {
-  CallInsights,
-  CallInsightsSkeleton,
-} from "@/components/ai-elements/call-insights";
-import {
-  ParticipantList,
-  ParticipantListSkeleton,
-} from "@/components/ai-elements/participant-list";
-
 // Tool input types for type-safe casting
 import type {
-  ShowCallListInput,
   ShowCallInfoInput,
-  ShowTranscriptInput,
   ShowCallInsightsInput,
+  ShowCallListInput,
   ShowParticipantsInput,
+  ShowTranscriptInput,
 } from "@/mastra/tools/ui";
+import { useTRPC } from "@/trpc/client";
 
 const initialSuggestions = [
   "Get me a list of all calls from the last two weeks",
