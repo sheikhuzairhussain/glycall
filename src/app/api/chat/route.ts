@@ -17,7 +17,7 @@ export async function POST(req: Request) {
 
   const stream = await handleChatStream({
     mastra,
-    agentId: "glyphic-agent",
+    agentId: "glycall-agent",
     params: {
       ...params,
       memory: {
@@ -36,7 +36,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const threadId = searchParams.get("threadId") || DEFAULT_THREAD_ID;
 
-  const memory = await mastra.getAgentById("glyphic-agent").getMemory();
+  const memory = await mastra.getAgentById("glycall-agent").getMemory();
   let response = null;
 
   try {

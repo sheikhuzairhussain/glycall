@@ -97,11 +97,11 @@ Provide 2-4 contextual suggestions based on:
 5. ALWAYS call suggest-follow-ups as your final tool call in every response
 `;
 
-export const glyphicAgent = new Agent({
-  id: "glyphic-agent",
-  name: "Glyphic Sales Call Agent",
+export const glycallAgent = new Agent({
+  id: "glycall-agent",
+  name: "Glycall Agent",
   instructions: INSTRUCTIONS,
-  model: "google/gemini-2.5-flash",
+  model: "anthropic/claude-sonnet-4-5",
   tools: {
     // Data fetching tools
     listCallsTool,
