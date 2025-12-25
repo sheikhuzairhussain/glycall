@@ -5,13 +5,14 @@ import { createUIMessageStreamResponse } from "ai";
 import { NextResponse } from "next/server";
 import { mastra } from "@/mastra";
 
-const THREAD_ID = "example-user-id";
+const DEFAULT_THREAD_ID = "example-user-id";
 const RESOURCE_ID = "glyphic-chat";
 
 export async function POST(req: Request) {
   const params = await req.json();
 
   const timezone = params.timezone || "UTC";
+  const threadId = params.threadId || DEFAULT_THREAD_ID;
 
   const requestContext = new RequestContext();
   requestContext.set("timezone", timezone);
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
       ...params,
       memory: {
         ...params.memory,
-        thread: THREAD_ID,
+        thread: threadId,
         resource: RESOURCE_ID,
       },
       requestContext,
@@ -33,13 +34,16 @@ export async function POST(req: Request) {
   return createUIMessageStreamResponse({ stream });
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const threadId = searchParams.get("threadId") || DEFAULT_THREAD_ID;
+
   const memory = await mastra.getAgentById("glyphic-agent").getMemory();
   let response = null;
 
   try {
     response = await memory?.recall({
-      threadId: THREAD_ID,
+      threadId,
       resourceId: RESOURCE_ID,
     });
   } catch {
