@@ -91,13 +91,13 @@ function WelcomeScreen({
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-auto px-4 py-8">
-      <div className="w-full max-w-xl space-y-6">
+      <div className="flex w-full max-w-xl flex-col gap-6">
         {/* Logo and Title */}
-        <div className="text-center space-y-3">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-gray-500 shadow-md">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="flex size-12 items-center justify-center rounded-xl bg-gray-500 shadow-md">
             <Sparkles className="size-6 text-white" />
           </div>
-          <div className="space-y-1">
+          <div className="flex flex-col gap-1">
             <h1 className="text-2xl font-bold tracking-tight">
               Welcome to Glycall
             </h1>
@@ -532,7 +532,7 @@ export default function ChatPage({
                                 message.role === "user" ? "user" : "assistant"
                               }
                             >
-                              <div className="space-y-3">
+                              <div className="flex flex-col gap-3">
                                 {getReasoningParts(message).map((part, idx) => (
                                   <Reasoning
                                     key={`reasoning-${message.id}-${idx}`}
@@ -587,7 +587,7 @@ export default function ChatPage({
           </Conversation>
           <div className="pointer-events-none absolute inset-x-0 bottom-0 pb-4">
             <div className="pointer-events-none absolute inset-x-0 -top-12 h-12" />
-            <div className="pointer-events-auto relative mx-auto w-full max-w-3xl space-y-3 px-4">
+            <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl flex-col gap-3 px-4">
               {uiStatus === "ready" && !isLoadingMessages ? (
                 <Suggestions key={currentSuggestions.join("|")}>
                   <Sparkles className="size-4 text-muted-foreground fill-primary stroke-none" />
