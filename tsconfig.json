@@ -28,7 +28,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
-, "src/lib/glyphic"  ],
+    "**/*.mts",
+    "src/lib/glyphic"
+  ],
   "exclude": ["node_modules"]
 }

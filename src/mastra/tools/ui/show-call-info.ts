@@ -62,4 +62,3 @@ export const showCallInfoTool = createTool({
     return { displayed: true, callId: input.call.id };
   },
 });
-

@@ -68,4 +68,3 @@ export const showCallListTool = createTool({
     return { displayed: true, count: input.calls.length };
   },
 });
-

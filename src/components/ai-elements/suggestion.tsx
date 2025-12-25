@@ -64,10 +64,7 @@ export const Suggestions = ({
     {animate ? (
       <AnimatePresence mode="wait">
         <motion.div
-          className={cn(
-            "flex w-max flex-nowrap items-center gap-2",
-            className,
-          )}
+          className={cn("flex w-max flex-nowrap items-center gap-2", className)}
           variants={containerVariants}
           initial="hidden"
           animate="visible"

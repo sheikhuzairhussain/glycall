@@ -47,7 +47,10 @@ const statusConfig: Record<
   },
 };
 
-export type CallStatusBadgeProps = Omit<ComponentProps<typeof Badge>, "variant"> & {
+export type CallStatusBadgeProps = Omit<
+  ComponentProps<typeof Badge>,
+  "variant"
+> & {
   status: CallStatus;
 };
 
@@ -69,4 +72,3 @@ export const CallStatusBadge = ({
     </Badge>
   );
 };
-

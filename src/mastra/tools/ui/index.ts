@@ -17,4 +17,3 @@ export type {
   Participant,
   Company,
 } from "./show-participants";
-

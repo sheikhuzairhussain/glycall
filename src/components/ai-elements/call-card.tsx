@@ -133,7 +133,10 @@ export const CallCard = ({
           <div className="flex items-center gap-2">
             <div className="flex -space-x-2">
               {displayParticipants.map((participant) => (
-                <ParticipantAvatar key={participant.id} participant={participant} />
+                <ParticipantAvatar
+                  key={participant.id}
+                  participant={participant}
+                />
               ))}
               {remainingCount > 0 && (
                 <ParticipantListHoverCard

@@ -23,7 +23,8 @@ type DeleteThreadContextValue = {
   requestDelete: (thread: Thread) => void;
 };
 
-const DeleteThreadContext = React.createContext<DeleteThreadContextValue | null>(null);
+const DeleteThreadContext =
+  React.createContext<DeleteThreadContextValue | null>(null);
 
 export function useDeleteThread() {
   const context = React.useContext(DeleteThreadContext);
@@ -33,14 +34,20 @@ export function useDeleteThread() {
   return context;
 }
 
-export function DeleteThreadProvider({ children }: { children: React.ReactNode }) {
+export function DeleteThreadProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [threadToDelete, setThreadToDelete] = React.useState<Thread | null>(null);
+  const [threadToDelete, setThreadToDelete] = React.useState<Thread | null>(
+    null,
+  );
 
   // Extract thread ID from pathname if we're on a chat page
   const activeThreadId = pathname?.startsWith("/chat/")
@@ -118,4 +125,3 @@ export function DeleteThreadProvider({ children }: { children: React.ReactNode }
     </DeleteThreadContext.Provider>
   );
 }
-

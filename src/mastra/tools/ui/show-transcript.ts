@@ -58,4 +58,3 @@ export const showTranscriptTool = createTool({
     return { displayed: true, turnCount: input.turns.length };
   },
 });
-

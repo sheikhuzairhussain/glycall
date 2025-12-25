@@ -15,7 +15,10 @@ export type Participant = {
   id: number;
 };
 
-export function getInitials(name?: string | null, email?: string | null): string {
+export function getInitials(
+  name?: string | null,
+  email?: string | null,
+): string {
   if (name) {
     return name
       .split(" ")
@@ -131,7 +134,10 @@ export const ParticipantListHoverCard = ({
             return (
               <div key={participant.id} className="flex items-center gap-2">
                 <Avatar
-                  className={cn("size-6 text-[10px]", getAvatarColor(identifier))}
+                  className={cn(
+                    "size-6 text-[10px]",
+                    getAvatarColor(identifier),
+                  )}
                 >
                   <AvatarFallback className="bg-transparent text-white">
                     {getInitials(participant.name, participant.email)}
@@ -196,4 +202,3 @@ export const ParticipantAvatar = ({
     </ParticipantHoverCard>
   );
 };
-

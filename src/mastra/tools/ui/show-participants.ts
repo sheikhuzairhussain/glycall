@@ -29,10 +29,7 @@ export const showParticipantsInputSchema = z.object({
   participants: z
     .array(ParticipantSchema)
     .describe("The participants to display"),
-  companies: z
-    .array(CompanySchema)
-    .optional()
-    .describe("Associated companies"),
+  companies: z.array(CompanySchema).optional().describe("Associated companies"),
   context: z
     .string()
     .optional()
@@ -55,4 +52,3 @@ export const showParticipantsTool = createTool({
     return { displayed: true, participantCount: input.participants.length };
   },
 });
-
