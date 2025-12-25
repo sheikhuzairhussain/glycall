@@ -1,11 +1,16 @@
 import type { UIMessagePart } from "ai";
 
+type AnyUIMessagePart = UIMessagePart<
+  Record<string, unknown>,
+  Record<string, { input: unknown; output: unknown }>
+>;
+
 /**
  * Type guard to check if a message part is a tool part.
  */
 export function isToolPart(
-  part: UIMessagePart,
-): part is UIMessagePart & { type: `tool-${string}` } {
+  part: AnyUIMessagePart,
+): part is AnyUIMessagePart & { type: `tool-${string}` } {
   return part.type.startsWith("tool-");
 }
 
@@ -13,8 +18,8 @@ export function isToolPart(
  * Type guard to check if a message part is a text part.
  */
 export function isTextPart(
-  part: UIMessagePart,
-): part is Extract<UIMessagePart, { type: "text" }> {
+  part: AnyUIMessagePart,
+): part is Extract<AnyUIMessagePart, { type: "text" }> {
   return part.type === "text";
 }
 
@@ -22,8 +27,8 @@ export function isTextPart(
  * Type guard to check if a message part is a reasoning part.
  */
 export function isReasoningPart(
-  part: UIMessagePart,
-): part is Extract<UIMessagePart, { type: "reasoning" }> {
+  part: AnyUIMessagePart,
+): part is Extract<AnyUIMessagePart, { type: "reasoning" }> {
   return part.type === "reasoning";
 }
 
@@ -31,7 +36,7 @@ export function isReasoningPart(
  * Type guard to check if a message part is a file part.
  */
 export function isFilePart(
-  part: UIMessagePart,
-): part is Extract<UIMessagePart, { type: "file" }> {
+  part: AnyUIMessagePart,
+): part is Extract<AnyUIMessagePart, { type: "file" }> {
   return part.type === "file";
 }
