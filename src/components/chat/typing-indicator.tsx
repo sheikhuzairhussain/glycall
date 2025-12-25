@@ -18,7 +18,7 @@ export function TypingIndicator() {
     >
       <Message from="assistant">
         <MessageContent>
-          <div className="flex items-center gap-1 py-1">
+          <div className="flex items-center gap-1 py-1 pb-2">
             {[0, 1, 2].map((i) => (
               <motion.span
                 key={i}

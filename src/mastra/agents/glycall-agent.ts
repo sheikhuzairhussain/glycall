@@ -1,3 +1,4 @@
+import { anthropic } from "@ai-sdk/anthropic";
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { getCurrentTimeTool } from "../tools/get-current-time";
@@ -97,11 +98,13 @@ Provide 2-4 contextual suggestions based on:
 5. ALWAYS call suggest-follow-ups as your final tool call in every response
 `;
 
+const model = anthropic("claude-sonnet-4-5");
+
 export const glycallAgent = new Agent({
   id: "glycall-agent",
   name: "Glycall Agent",
   instructions: INSTRUCTIONS,
-  model: "anthropic/claude-sonnet-4-5",
+  model,
   tools: {
     // Data fetching tools
     listCallsTool,

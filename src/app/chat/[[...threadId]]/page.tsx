@@ -1,13 +1,5 @@
 "use client";
 
-import { useChat } from "@ai-sdk/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { ToolUIPart } from "ai";
-import { DefaultChatTransport } from "ai";
-import { Loader2, Sparkles } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
-import { useRouter } from "next/navigation";
-import { use, useCallback, useEffect, useRef, useState } from "react";
 import {
   Conversation,
   ConversationContent,
@@ -26,6 +18,7 @@ import {
   PromptInputBody,
   PromptInputFooter,
   type PromptInputMessage,
+  PromptInputSpeechButton,
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
@@ -43,10 +36,23 @@ import {
   WelcomeScreen,
 } from "@/components/chat";
 import { MessageErrorBoundary } from "@/components/error-boundary";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useSuggestions } from "@/hooks/use-suggestions";
 import { isReasoningPart, isTextPart, isToolPart } from "@/lib/type-guards";
 import { isClientToolId, SERVER_TOOL_LABELS } from "@/mastra/constants";
 import { useTRPC } from "@/trpc/client";
+import { useChat } from "@ai-sdk/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { ToolUIPart } from "ai";
+import { DefaultChatTransport } from "ai";
+import { Loader2, Sparkles } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useRouter } from "next/navigation";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 
 export default function ChatPage({
   params,
@@ -61,6 +67,8 @@ export default function ChatPage({
   const [isLoadingMessages, setIsLoadingMessages] = useState(!!threadId);
   const pendingMessageRef = useRef<string | null>(null);
   const hasSentInitialMessage = useRef(false);
+  const welcomeTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const chatTextareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -238,12 +246,17 @@ export default function ChatPage({
               >
                 <PromptInputBody>
                   <PromptInputTextarea
+                    ref={welcomeTextareaRef}
                     onChange={(event) => setInputValue(event.target.value)}
                     placeholder="Ask about your sales calls..."
                     value={inputValue}
                   />
                 </PromptInputBody>
                 <PromptInputFooter>
+                  <PromptInputSpeechButton
+                    textareaRef={welcomeTextareaRef}
+                    onTranscriptionChange={setInputValue}
+                  />
                   <PromptInputSubmit
                     disabled={
                       !inputValue.trim() ||
@@ -295,9 +308,7 @@ export default function ChatPage({
                       const isStreaming =
                         uiStatus === "streaming" || uiStatus === "submitted";
                       const showCopyButton =
-                        isAssistant &&
-                        messageText &&
-                        !(isLastMessage && isStreaming);
+                        messageText && !(isLastMessage && isStreaming);
 
                       return (
                         <motion.div
@@ -368,6 +379,11 @@ export default function ChatPage({
                                     <AnimatePresence>
                                       {showCopyButton && (
                                         <motion.div
+                                          className={
+                                            !isAssistant
+                                              ? "self-end"
+                                              : undefined
+                                          }
                                           initial={{ opacity: 0, y: -8 }}
                                           animate={{ opacity: 1, y: 0 }}
                                           exit={{ opacity: 0, y: -8 }}
@@ -405,12 +421,17 @@ export default function ChatPage({
             </ConversationContent>
             <ConversationScrollButton />
           </Conversation>
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 py-4 backdrop-blur-lg bg-background/90 shadow-lg">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0">
             <div className="pointer-events-none absolute inset-x-0 -top-12 h-12" />
             <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl flex-col gap-3 px-4">
               {uiStatus === "ready" && !isLoadingMessages ? (
                 <Suggestions key={currentSuggestions.join("|")}>
-                  <Sparkles className="size-4 text-muted-foreground fill-primary stroke-none" />
+                  <Suggestion
+                    suggestion="Suggestions"
+                    className="pointer-events-none bg-background!"
+                  >
+                    <Sparkles className="size-4 text-muted-foreground fill-primary stroke-none" />
+                  </Suggestion>
                   {currentSuggestions.map((suggestion, index) => (
                     <Suggestion
                       key={`${index}-${suggestion}`}
@@ -425,24 +446,38 @@ export default function ChatPage({
                   <Suggestion suggestion="" className="opacity-0 w-0" />
                 </Suggestions>
               )}
-              <PromptInput
-                onSubmit={handleSubmit}
-                className="**:data-[slot=input-group]:shadow-xl! **:data-[slot=input-group]:bg-secondary **:data-[slot=input-group]:overflow-visible"
-              >
-                <PromptInputBody>
-                  <PromptInputTextarea
-                    onChange={(event) => setInputValue(event.target.value)}
-                    placeholder="Ask Glycall about your sales calls..."
-                    value={inputValue}
-                  />
-                </PromptInputBody>
-                <PromptInputFooter>
-                  <PromptInputSubmit
-                    disabled={!inputValue.trim() || uiStatus === "streaming"}
-                    status={uiStatus}
-                  />
-                </PromptInputFooter>
-              </PromptInput>
+              <div className="backdrop-blur-lg bg-background/80 shadow-lg pb-4">
+                <PromptInput
+                  onSubmit={handleSubmit}
+                  className="**:data-[slot=input-group]:shadow-xl! **:data-[slot=input-group]:bg-secondary **:data-[slot=input-group]:overflow-visible"
+                >
+                  <PromptInputBody>
+                    <PromptInputTextarea
+                      ref={chatTextareaRef}
+                      onChange={(event) => setInputValue(event.target.value)}
+                      placeholder="Ask Glycall about your sales calls..."
+                      value={inputValue}
+                    />
+                  </PromptInputBody>
+                  <PromptInputFooter>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <span>
+                          <PromptInputSpeechButton
+                            textareaRef={chatTextareaRef}
+                            onTranscriptionChange={setInputValue}
+                          />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>Text to speech</TooltipContent>
+                    </Tooltip>
+                    <PromptInputSubmit
+                      disabled={!inputValue.trim() || uiStatus === "streaming"}
+                      status={uiStatus}
+                    />
+                  </PromptInputFooter>
+                </PromptInput>
+              </div>
             </div>
           </div>
         </>

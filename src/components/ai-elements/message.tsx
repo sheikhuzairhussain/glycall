@@ -469,7 +469,7 @@ export function MessageCopyButton({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Copy</p>
+          <p>Copy message to clipboard</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

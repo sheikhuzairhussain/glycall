@@ -11,6 +11,7 @@
     "gen": "bunx @hey-api/openapi-ts -i https://api.staging.glyphic.ai/openapi.json -o src/lib/glyphic -c @hey-api/client-next && biome format --write src/lib/glyphic"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.1",
     "@ai-sdk/react": "^3.0.3",
     "@mastra/ai-sdk": "^1.0.0-beta.11",
     "@mastra/core": "^1.0.0-beta.15",
