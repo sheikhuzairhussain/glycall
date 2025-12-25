@@ -4,14 +4,23 @@ import type { FileUIPart, UIMessage } from "ai";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
+  CopyIcon,
   PaperclipIcon,
   XIcon,
 } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
-import { createContext, memo, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
+import { ButtonGroupText } from "@/components/ui/button-group";
 import {
   Tooltip,
   TooltipContent,
@@ -282,7 +291,7 @@ export const MessageResponse = memo(
   ({ className, ...props }: MessageResponseProps) => (
     <Streamdown
       className={cn(
-        "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+        "prose prose-sm prose-neutral dark:prose-invert max-w-none",
         className,
       )}
       {...props}
@@ -418,3 +427,51 @@ export const MessageToolbar = ({
     {children}
   </div>
 );
+
+export type MessageCopyButtonProps = Omit<
+  ComponentProps<typeof Button>,
+  "onClick"
+> & {
+  content: string;
+};
+
+export function MessageCopyButton({
+  content,
+  className,
+  ...props
+}: MessageCopyButtonProps) {
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast.success("Copied message");
+    } catch {
+      toast.error("Failed to copy message");
+    }
+  }, [content]);
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size="icon-sm"
+            type="button"
+            variant="ghost"
+            onClick={handleCopy}
+            className={cn(
+              "text-muted-foreground hover:text-foreground transition-colors",
+              className,
+            )}
+            {...props}
+          >
+            <CopyIcon className="size-4" />
+            <span className="sr-only">Copy message</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Copy</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}

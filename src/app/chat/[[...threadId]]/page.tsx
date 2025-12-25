@@ -18,6 +18,7 @@ import {
   MessageBranch,
   MessageBranchContent,
   MessageContent,
+  MessageCopyButton,
   MessageResponse,
 } from "@/components/ai-elements/message";
 import {
@@ -287,76 +288,108 @@ export default function ChatPage({
                     animate={{ opacity: 1 }}
                     className="flex flex-col gap-8"
                   >
-                    {messages.map((message, index) => (
-                      <motion.div
-                        key={message.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{
-                          duration: 0.3,
-                          delay: Math.min(index * 0.05, 0.3),
-                          ease: "easeOut",
-                        }}
-                      >
-                        <MessageErrorBoundary>
-                          <MessageBranch defaultBranch={0}>
-                            <MessageBranchContent>
-                              <Message
-                                from={
-                                  message.role === "user" ? "user" : "assistant"
-                                }
-                              >
-                                <div className="flex flex-col gap-3">
-                                  {getReasoningParts(message).map(
-                                    (part, idx) => (
-                                      <Reasoning
-                                        key={`reasoning-${message.id}-${idx}`}
-                                        duration={0}
-                                      >
-                                        <ReasoningTrigger />
-                                        <ReasoningContent>
-                                          {part.type === "reasoning"
-                                            ? part.text
-                                            : ""}
-                                        </ReasoningContent>
-                                      </Reasoning>
-                                    ),
-                                  )}
+                    {messages.map((message, index) => {
+                      const messageText = getMessageText(message);
+                      const isAssistant = message.role === "assistant";
+                      const isLastMessage = index === messages.length - 1;
+                      const isStreaming =
+                        uiStatus === "streaming" || uiStatus === "submitted";
+                      const showCopyButton =
+                        isAssistant &&
+                        messageText &&
+                        !(isLastMessage && isStreaming);
 
-                                  {getServerToolParts(message).map(
-                                    (part, idx) => (
-                                      <ServerToolStatus
-                                        key={`server-${message.id}-${idx}`}
-                                        part={part}
-                                        toolKey={`server-${message.id}-${idx}`}
-                                      />
-                                    ),
-                                  )}
+                      return (
+                        <motion.div
+                          key={message.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            duration: 0.3,
+                            delay: Math.min(index * 0.05, 0.3),
+                            ease: "easeOut",
+                          }}
+                        >
+                          <MessageErrorBoundary>
+                            <MessageBranch defaultBranch={0}>
+                              <MessageBranchContent>
+                                <Message
+                                  from={
+                                    message.role === "user"
+                                      ? "user"
+                                      : "assistant"
+                                  }
+                                >
+                                  <div className="flex flex-col gap-3">
+                                    {getReasoningParts(message).map(
+                                      (part, idx) => (
+                                        <Reasoning
+                                          key={`reasoning-${message.id}-${idx}`}
+                                          duration={0}
+                                        >
+                                          <ReasoningTrigger />
+                                          <ReasoningContent>
+                                            {part.type === "reasoning"
+                                              ? part.text
+                                              : ""}
+                                          </ReasoningContent>
+                                        </Reasoning>
+                                      ),
+                                    )}
 
-                                  {getClientToolParts(message).map(
-                                    (part, idx) => (
-                                      <ClientToolUI
-                                        key={`client-${message.id}-${idx}`}
-                                        part={part}
-                                        toolKey={`client-${message.id}-${idx}`}
-                                      />
-                                    ),
-                                  )}
+                                    {getServerToolParts(message).map(
+                                      (part, idx) => (
+                                        <ServerToolStatus
+                                          key={`server-${message.id}-${idx}`}
+                                          part={part}
+                                          toolKey={`server-${message.id}-${idx}`}
+                                        />
+                                      ),
+                                    )}
 
-                                  {getMessageText(message) && (
-                                    <MessageContent>
-                                      <MessageResponse>
-                                        {getMessageText(message)}
-                                      </MessageResponse>
-                                    </MessageContent>
-                                  )}
-                                </div>
-                              </Message>
-                            </MessageBranchContent>
-                          </MessageBranch>
-                        </MessageErrorBoundary>
-                      </motion.div>
-                    ))}
+                                    {getClientToolParts(message).map(
+                                      (part, idx) => (
+                                        <ClientToolUI
+                                          key={`client-${message.id}-${idx}`}
+                                          part={part}
+                                          toolKey={`client-${message.id}-${idx}`}
+                                        />
+                                      ),
+                                    )}
+
+                                    {messageText && (
+                                      <MessageContent>
+                                        <MessageResponse>
+                                          {messageText}
+                                        </MessageResponse>
+                                      </MessageContent>
+                                    )}
+
+                                    <AnimatePresence>
+                                      {showCopyButton && (
+                                        <motion.div
+                                          initial={{ opacity: 0, y: -8 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          exit={{ opacity: 0, y: -8 }}
+                                          transition={{
+                                            duration: 0.2,
+                                            ease: "easeOut",
+                                          }}
+                                        >
+                                          <MessageCopyButton
+                                            content={messageText}
+                                          />
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+                                  </div>
+                                </Message>
+                              </MessageBranchContent>
+                            </MessageBranch>
+                          </MessageErrorBoundary>
+                        </motion.div>
+                      );
+                    })}
 
                     {(uiStatus === "submitted" || uiStatus === "streaming") && (
                       <TypingIndicator />

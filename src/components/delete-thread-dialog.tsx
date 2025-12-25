@@ -1,8 +1,10 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Trash2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -62,10 +64,12 @@ export function DeleteThreadProvider({
           queryKey: trpc.threads.list.queryKey(),
         });
 
-        // If we deleted the currently active thread, navigate to home
+        // If we deleted the currently active thread, navigate to new chat page
         if (threadToDelete && activeThreadId === threadToDelete.id) {
-          router.push("/");
+          router.push("/chat");
         }
+
+        toast.error("Chat deleted");
 
         setDialogOpen(false);
         setThreadToDelete(null);
@@ -117,6 +121,11 @@ export function DeleteThreadProvider({
               onClick={confirmDelete}
               disabled={deleteMutation.isPending}
             >
+              {deleteMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
               {deleteMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
