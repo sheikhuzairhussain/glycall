@@ -46,6 +46,7 @@ flowchart TB
         tRPCRouter[tRPC Router]
         Agent[Glycall Agent]
         Tools[Tools]
+        MastraStorage[Mastra Storage]
     end
     
     subgraph external [External]
@@ -59,8 +60,9 @@ flowchart TB
     ChatAPI --> Agent
     Agent --> Tools
     Tools --> GlyphicAPI
-    Agent --> Postgres
-    tRPCRouter --> Postgres
+    Agent --> MastraStorage
+    tRPCRouter --> MastraStorage
+    MastraStorage --> Postgres
     GenUI -.-> ChatUI
 ```
 
