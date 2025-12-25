@@ -7,7 +7,7 @@ import {
   MailIcon,
   UsersIcon,
 } from "lucide-react";
-import { type ComponentProps, useState } from "react";
+import { type ComponentProps, memo, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,18 +17,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, getAvatarColor, getInitials } from "@/lib/utils";
+import type { Company, Participant } from "@/types/call";
 
-export type Participant = {
-  name?: string | null;
-  email?: string | null;
-  id: number;
-};
-
-export type Company = {
-  name?: string | null;
-  domain: string;
-};
+export type { Company, Participant };
 
 export type ParticipantListProps = ComponentProps<"div"> & {
   participants: Participant[];
@@ -36,42 +28,11 @@ export type ParticipantListProps = ComponentProps<"div"> & {
   context?: string;
 };
 
-function getInitials(name?: string | null, email?: string | null): string {
-  if (name) {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  }
-  if (email) {
-    return email[0].toUpperCase();
-  }
-  return "?";
-}
-
-function getAvatarColor(identifier: string): string {
-  const colors = [
-    "bg-blue-500",
-    "bg-emerald-500",
-    "bg-purple-500",
-    "bg-orange-500",
-    "bg-pink-500",
-    "bg-cyan-500",
-    "bg-amber-500",
-    "bg-indigo-500",
-    "bg-rose-500",
-    "bg-teal-500",
-  ];
-  let hash = 0;
-  for (let i = 0; i < identifier.length; i++) {
-    hash = identifier.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
-}
-
-function ParticipantCard({ participant }: { participant: Participant }) {
+const ParticipantCard = memo(function ParticipantCard({
+  participant,
+}: {
+  participant: Participant;
+}) {
   const [copied, setCopied] = useState(false);
   const identifier =
     participant.email || participant.name || String(participant.id);
@@ -129,7 +90,7 @@ function ParticipantCard({ participant }: { participant: Participant }) {
       )}
     </div>
   );
-}
+});
 
 export const ParticipantList = ({
   className,

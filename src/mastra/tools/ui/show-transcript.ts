@@ -1,20 +1,21 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
+import type { Participant, TranscriptTurn } from "@/types/call";
+
+export type { TranscriptTurn };
+export type TranscriptParticipant = Participant;
 
 const TranscriptTurnSchema = z.object({
   party_id: z.number(),
   turn_text: z.string(),
   timestamp: z.string(),
-});
+}) satisfies z.ZodType<TranscriptTurn>;
 
 const ParticipantSchema = z.object({
   name: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
   id: z.number(),
-});
-
-export type TranscriptTurn = z.infer<typeof TranscriptTurnSchema>;
-export type TranscriptParticipant = z.infer<typeof ParticipantSchema>;
+}) satisfies z.ZodType<Participant>;
 
 const DESCRIPTION = `Display a portion of a call transcript in a conversation format.
 

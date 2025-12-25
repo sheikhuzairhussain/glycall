@@ -20,15 +20,17 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
-import { cn, formatDuration } from "@/lib/utils";
-import { type CallStatus, CallStatusBadge } from "./call-status-badge";
 import {
+  cn,
+  formatDuration,
+  formatFullDate,
   getAvatarColor,
   getInitials,
   getParticipantIdentifier,
-  type Participant,
-  ParticipantHoverCard,
-} from "./participant-hover-card";
+} from "@/lib/utils";
+import type { CallStatus, Company, Participant } from "@/types/call";
+import { CallStatusBadge } from "./call-status-badge";
+import { ParticipantHoverCard } from "./participant-hover-card";
 
 export type { CallStatus };
 
@@ -40,25 +42,13 @@ export type CallDetailData = {
   status: { code: CallStatus };
   summary?: string | null;
   url_link?: string | null;
-  companies?: Array<{ name?: string | null; domain: string }>;
+  companies?: Company[];
   participants?: Participant[];
 };
 
 export type CallDetailProps = ComponentProps<"div"> & {
   call: CallDetailData;
 };
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString([], {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export const CallDetail = ({ className, call, ...props }: CallDetailProps) => {
   return (
@@ -96,7 +86,7 @@ export const CallDetail = ({ className, call, ...props }: CallDetailProps) => {
         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <CalendarIcon className="size-4" />
-            {formatDate(call.start_time)}
+            {formatFullDate(call.start_time)}
           </span>
           {call.duration != null && (
             <span className="flex items-center gap-1.5">

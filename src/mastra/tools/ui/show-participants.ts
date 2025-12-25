@@ -1,19 +1,19 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
+import type { Company, Participant } from "@/types/call";
+
+export type { Company, Participant };
 
 const ParticipantSchema = z.object({
   name: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
   id: z.number(),
-});
+}) satisfies z.ZodType<Participant>;
 
 const CompanySchema = z.object({
   name: z.string().nullable().optional(),
   domain: z.string(),
-});
-
-export type Participant = z.infer<typeof ParticipantSchema>;
-export type Company = z.infer<typeof CompanySchema>;
+}) satisfies z.ZodType<Company>;
 
 const DESCRIPTION = `Display participant information from calls.
 

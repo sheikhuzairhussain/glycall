@@ -208,31 +208,6 @@ export const MessageBranchContent = ({
   ));
 };
 
-export type MessageBranchSelectorProps = HTMLAttributes<HTMLDivElement> & {
-  from: UIMessage["role"];
-};
-
-export const MessageBranchSelector = ({
-  className,
-  from,
-  ...props
-}: MessageBranchSelectorProps) => {
-  const { totalBranches } = useMessageBranch();
-
-  // Don't render if there's only one branch
-  if (totalBranches <= 1) {
-    return null;
-  }
-
-  return (
-    <ButtonGroup
-      className="[&>*:not(:first-child)]:rounded-l-md [&>*:not(:last-child)]:rounded-r-md"
-      orientation="horizontal"
-      {...props}
-    />
-  );
-};
-
 export type MessageBranchPreviousProps = ComponentProps<typeof Button>;
 
 export const MessageBranchPrevious = ({

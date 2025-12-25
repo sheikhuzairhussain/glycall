@@ -208,7 +208,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <span className="font-semibold tracking-tight">Glycall</span>
           </Link>
           <Button variant="ghost" size="icon" className="size-8" asChild>
-            <Link href="/">
+            <Link href="/chat">
               <Plus className="size-4" />
               <span className="sr-only">New chat</span>
             </Link>
@@ -256,8 +256,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
             <div className="relative mb-4">
-              <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-br from-gray-200 to-gray-300 opacity-40 blur-xl dark:from-gray-700 dark:to-gray-800" />
-              <div className="relative flex size-14 items-center justify-center rounded-2xl border border-gray-200/60 bg-gradient-to-br from-gray-50 to-gray-100 shadow-sm dark:border-gray-700/60 dark:from-gray-800 dark:to-gray-900">
+              <div className="absolute inset-0 animate-pulse rounded-full bg-linear-to-br from-gray-200 to-gray-300 opacity-40 blur-xl dark:from-gray-700 dark:to-gray-800" />
+              <div className="relative flex size-14 items-center justify-center rounded-2xl border border-gray-200/60 bg-linear-to-br from-gray-50 to-gray-100 shadow-sm dark:border-gray-700/60 dark:from-gray-800 dark:to-gray-900">
                 <MessageSquare className="size-6 text-gray-400 dark:text-gray-500" />
               </div>
             </div>

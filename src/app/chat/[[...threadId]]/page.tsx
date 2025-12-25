@@ -7,9 +7,7 @@ import { DefaultChatTransport } from "ai";
 import { Loader2, Sparkles } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CallDetail } from "@/components/ai-elements/call-detail";
-import { CallList } from "@/components/ai-elements/call-list";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import {
   Conversation,
   ConversationContent,
@@ -22,7 +20,6 @@ import {
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
-import { ParticipantList } from "@/components/ai-elements/participant-list";
 import {
   PromptInput,
   PromptInputBody,
@@ -36,91 +33,19 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
-import { Shimmer } from "@/components/ai-elements/shimmer";
+import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import {
-  Suggestion,
-  SuggestionCard,
-  Suggestions,
-  SuggestionsGrid,
-} from "@/components/ai-elements/suggestion";
-import { Transcript } from "@/components/ai-elements/transcript";
-import type {
-  ShowCallInfoInput,
-  ShowCallListInput,
-  ShowParticipantsInput,
-  ShowTranscriptInput,
-} from "@/mastra/tools/ui";
+  ClientToolUI,
+  getToolId,
+  ServerToolStatus,
+  TypingIndicator,
+  WelcomeScreen,
+} from "@/components/chat";
+import { MessageErrorBoundary } from "@/components/error-boundary";
+import { useSuggestions } from "@/hooks/use-suggestions";
+import { isReasoningPart, isTextPart, isToolPart } from "@/lib/type-guards";
+import { isClientToolId, SERVER_TOOL_LABELS } from "@/mastra/constants";
 import { useTRPC } from "@/trpc/client";
-
-/** Extracts tool ID from a tool part type (e.g., "tool-myTool" -> "myTool") */
-const getToolId = (partType: string) => partType.replace("tool-", "");
-
-const initialSuggestions = [
-  "Get me a list of all calls from the last two weeks",
-  "Find all calls with jordan@freetrade.io",
-  "Who did adam@glyphic.ai talk to in his last call?",
-  "Summarize the calls we had in September",
-];
-
-// Tool ID for suggest-follow-ups (matches the variable name, not the tool id)
-const SUGGEST_TOOL_ID = "suggestFollowUpsTool";
-
-// Client tool IDs - these render custom UI components
-const CLIENT_TOOL_IDS = [
-  "showCallListTool",
-  "showCallInfoTool",
-  "showTranscriptTool",
-  "showParticipantsTool",
-];
-
-// Server tool IDs - these call the API and show status
-const SERVER_TOOL_IDS: Record<string, { loading: string; done: string }> = {
-  listCallsTool: { loading: "Searching calls", done: "Searched calls" },
-  getCallInfoTool: {
-    loading: "Retrieving call information",
-    done: "Retrieved call information",
-  },
-};
-
-// Welcome screen component
-function WelcomeScreen({
-  onSuggestionClick,
-}: {
-  onSuggestionClick: (suggestion: string) => void;
-}) {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-auto px-4 py-8">
-      <div className="flex w-full max-w-xl flex-col gap-6">
-        {/* Logo and Title */}
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="flex size-12 items-center justify-center rounded-xl bg-gray-500 shadow-md">
-            <Sparkles className="size-6 text-white" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-bold tracking-tight">
-              Welcome to Glycall
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              Your AI-powered sales call assistant. Ask me anything about your
-              calls.
-            </p>
-          </div>
-        </div>
-
-        {/* Suggestions */}
-        <SuggestionsGrid>
-          {initialSuggestions.map((suggestion) => (
-            <SuggestionCard
-              key={suggestion}
-              suggestion={suggestion}
-              onClick={onSuggestionClick}
-            />
-          ))}
-        </SuggestionsGrid>
-      </div>
-    </div>
-  );
-}
 
 export default function ChatPage({
   params,
@@ -145,18 +70,14 @@ export default function ChatPage({
   const createThreadMutation = useMutation(
     trpc.threads.create.mutationOptions({
       onSuccess: (thread) => {
-        // Invalidate threads list to refresh sidebar
         queryClient.invalidateQueries({
           queryKey: trpc.threads.list.queryKey(),
         });
-        // TODO: This sessionStorage workaround is used to pass the initial message
-        // to the new thread page after navigation. Consider using URL search params,
-        // React Context, or a state management solution for a cleaner approach.
+        // Pass initial message via sessionStorage
         const message = pendingMessageRef.current;
         if (message) {
           sessionStorage.setItem(`pending-message-${thread.id}`, message);
         }
-        // Navigate to the new thread
         router.push(`/chat/${thread.id}`);
       },
       onError: () => {
@@ -189,8 +110,8 @@ export default function ChatPage({
             setMessages(loadedMessages);
           }
         }
-      } catch (error) {
-        console.error("Failed to load messages:", error);
+      } catch {
+        // Failed to load messages - thread may be new
       } finally {
         setIsLoadingMessages(false);
       }
@@ -212,48 +133,8 @@ export default function ChatPage({
     }
   }, [isLoadingMessages, threadId, sendMessage]);
 
-  // Get suggestions from the last suggest-follow-ups tool output
-  const currentSuggestions = useMemo(() => {
-    if (messages.length === 0) {
-      return initialSuggestions;
-    }
-
-    // Find the last assistant message with suggest-follow-ups tool output
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const message = messages[i];
-      if (message.role === "assistant" && message.parts) {
-        for (const part of message.parts) {
-          if (!part.type.startsWith("tool-")) continue;
-
-          const toolPart = part as ToolUIPart;
-          const toolId = getToolId(toolPart.type);
-
-          if (toolId === SUGGEST_TOOL_ID && toolPart.output) {
-            let output: { suggestions?: string[] };
-            if (typeof toolPart.output === "string") {
-              try {
-                output = JSON.parse(toolPart.output);
-              } catch {
-                continue;
-              }
-            } else {
-              output = toolPart.output as { suggestions?: string[] };
-            }
-
-            if (
-              output.suggestions &&
-              Array.isArray(output.suggestions) &&
-              output.suggestions.length > 0
-            ) {
-              return output.suggestions;
-            }
-          }
-        }
-      }
-    }
-
-    return initialSuggestions;
-  }, [messages]);
+  // Get suggestions from messages
+  const currentSuggestions = useSuggestions(messages);
 
   // Map status to UI status
   const uiStatus =
@@ -284,11 +165,9 @@ export default function ChatPage({
     if (!message.text?.trim()) return;
 
     if (threadId) {
-      // Existing thread - send message directly
       sendMessage({ text: message.text });
       setInputValue("");
     } else {
-      // New chat - create thread first
       handleNewChat(message.text);
     }
   };
@@ -301,150 +180,44 @@ export default function ChatPage({
     }
   };
 
-  // Helper to extract text from message parts
+  // Message part helpers using type guards
   const getMessageText = (message: (typeof messages)[number]) => {
     if (!message.parts) return "";
 
-    const textParts = message.parts.filter((part) => part.type === "text");
+    const textParts = message.parts.filter(isTextPart);
     if (textParts.length === 0) return "";
 
     const hasCompletedDisplayTools = message.parts.some((part) => {
-      if (!part.type.startsWith("tool-")) return false;
+      if (!isToolPart(part)) return false;
       const toolId = getToolId(part.type);
       const toolPart = part as ToolUIPart;
-      return (
-        CLIENT_TOOL_IDS.includes(toolId) &&
-        toolPart.state === "output-available"
-      );
+      return isClientToolId(toolId) && toolPart.state === "output-available";
     });
 
     if (hasCompletedDisplayTools && textParts.length > 1) {
       const lastTextPart = textParts[textParts.length - 1];
-      return lastTextPart.type === "text" ? lastTextPart.text : "";
+      return lastTextPart.text;
     }
 
-    return textParts
-      .map((part) => (part.type === "text" ? part.text : ""))
-      .join("");
+    return textParts.map((part) => part.text).join("");
   };
 
-  // Helper to get reasoning parts
   const getReasoningParts = (message: (typeof messages)[number]) => {
-    if (message.parts) {
-      return message.parts.filter((part) => part.type === "reasoning");
-    }
-    return [];
+    return message.parts?.filter(isReasoningPart) ?? [];
   };
 
-  // Helper to get client tool parts for generative UI
   const getClientToolParts = (message: (typeof messages)[number]) => {
-    if (message.parts) {
-      return message.parts.filter((part) => {
-        if (!part.type.startsWith("tool-")) return false;
-        const toolId = getToolId(part.type);
-        return CLIENT_TOOL_IDS.includes(toolId);
-      }) as ToolUIPart[];
-    }
-    return [];
+    return (message.parts?.filter((part) => {
+      if (!isToolPart(part)) return false;
+      return isClientToolId(getToolId(part.type));
+    }) ?? []) as ToolUIPart[];
   };
 
-  // Helper to get server tool parts
   const getServerToolParts = (message: (typeof messages)[number]) => {
-    if (message.parts) {
-      return message.parts.filter((part) => {
-        if (!part.type.startsWith("tool-")) return false;
-        const toolId = getToolId(part.type);
-        return toolId in SERVER_TOOL_IDS;
-      }) as ToolUIPart[];
-    }
-    return [];
-  };
-
-  // Render server tool status
-  const renderServerTool = (part: ToolUIPart, key: string) => {
-    const toolId = getToolId(part.type);
-    const labels = SERVER_TOOL_IDS[toolId];
-    if (!labels) return null;
-
-    const isLoading =
-      part.state !== "output-available" && part.state !== "output-error";
-
-    return (
-      <div key={key} className="text-sm text-muted-foreground">
-        {isLoading ? (
-          <Shimmer className="text-muted-foreground">{`${labels.loading}...`}</Shimmer>
-        ) : (
-          <span>{labels.done}</span>
-        )}
-      </div>
-    );
-  };
-
-  // Render client tool as custom UI component
-  const renderClientTool = (part: ToolUIPart, key: string) => {
-    const toolId = getToolId(part.type);
-
-    if (part.state === "output-error") {
-      return (
-        <div
-          key={key}
-          className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"
-        >
-          Error: {part.errorText || "Failed to display content"}
-        </div>
-      );
-    }
-
-    // Don't render until output is available
-    if (part.state !== "output-available") return null;
-
-    switch (toolId) {
-      case "showCallListTool": {
-        const input = part.input as ShowCallListInput;
-        return (
-          <CallList
-            key={key}
-            calls={input.calls}
-            title={input.title}
-            hasMore={input.hasMore}
-          />
-        );
-      }
-
-      case "showCallInfoTool": {
-        const input = part.input as ShowCallInfoInput;
-        return <CallDetail key={key} call={input.call} />;
-      }
-
-      case "showTranscriptTool": {
-        const input = part.input as ShowTranscriptInput;
-        return (
-          <Transcript
-            key={key}
-            callId={input.callId}
-            callTitle={input.callTitle}
-            turns={input.turns}
-            participants={input.participants}
-            context={input.context}
-          />
-        );
-      }
-
-      case "showParticipantsTool": {
-        const input = part.input as ShowParticipantsInput;
-        return (
-          <ParticipantList
-            key={key}
-            participants={input.participants}
-            companies={input.companies}
-            context={input.context}
-          />
-        );
-      }
-
-      default:
-        return null;
-    }
+    return (message.parts?.filter((part) => {
+      if (!isToolPart(part)) return false;
+      return getToolId(part.type) in SERVER_TOOL_LABELS;
+    }) ?? []) as ToolUIPart[];
   };
 
   const hasMessages = messages.length > 0;
@@ -525,87 +298,68 @@ export default function ChatPage({
                           ease: "easeOut",
                         }}
                       >
-                        <MessageBranch defaultBranch={0}>
-                          <MessageBranchContent>
-                            <Message
-                              from={
-                                message.role === "user" ? "user" : "assistant"
-                              }
-                            >
-                              <div className="flex flex-col gap-3">
-                                {getReasoningParts(message).map((part, idx) => (
-                                  <Reasoning
-                                    key={`reasoning-${message.id}-${idx}`}
-                                    duration={0}
-                                  >
-                                    <ReasoningTrigger />
-                                    <ReasoningContent>
-                                      {part.type === "reasoning"
-                                        ? part.text
-                                        : ""}
-                                    </ReasoningContent>
-                                  </Reasoning>
-                                ))}
+                        <MessageErrorBoundary>
+                          <MessageBranch defaultBranch={0}>
+                            <MessageBranchContent>
+                              <Message
+                                from={
+                                  message.role === "user" ? "user" : "assistant"
+                                }
+                              >
+                                <div className="flex flex-col gap-3">
+                                  {getReasoningParts(message).map(
+                                    (part, idx) => (
+                                      <Reasoning
+                                        key={`reasoning-${message.id}-${idx}`}
+                                        duration={0}
+                                      >
+                                        <ReasoningTrigger />
+                                        <ReasoningContent>
+                                          {part.type === "reasoning"
+                                            ? part.text
+                                            : ""}
+                                        </ReasoningContent>
+                                      </Reasoning>
+                                    ),
+                                  )}
 
-                                {getServerToolParts(message).map((part, idx) =>
-                                  renderServerTool(
-                                    part,
-                                    `server-${message.id}-${idx}`,
-                                  ),
-                                )}
+                                  {getServerToolParts(message).map(
+                                    (part, idx) => (
+                                      <ServerToolStatus
+                                        key={`server-${message.id}-${idx}`}
+                                        part={part}
+                                        toolKey={`server-${message.id}-${idx}`}
+                                      />
+                                    ),
+                                  )}
 
-                                {getClientToolParts(message).map((part, idx) =>
-                                  renderClientTool(
-                                    part,
-                                    `client-${message.id}-${idx}`,
-                                  ),
-                                )}
+                                  {getClientToolParts(message).map(
+                                    (part, idx) => (
+                                      <ClientToolUI
+                                        key={`client-${message.id}-${idx}`}
+                                        part={part}
+                                        toolKey={`client-${message.id}-${idx}`}
+                                      />
+                                    ),
+                                  )}
 
-                                {getMessageText(message) && (
-                                  <MessageContent>
-                                    <MessageResponse>
-                                      {getMessageText(message)}
-                                    </MessageResponse>
-                                  </MessageContent>
-                                )}
-                              </div>
-                            </Message>
-                          </MessageBranchContent>
-                        </MessageBranch>
+                                  {getMessageText(message) && (
+                                    <MessageContent>
+                                      <MessageResponse>
+                                        {getMessageText(message)}
+                                      </MessageResponse>
+                                    </MessageContent>
+                                  )}
+                                </div>
+                              </Message>
+                            </MessageBranchContent>
+                          </MessageBranch>
+                        </MessageErrorBoundary>
                       </motion.div>
                     ))}
 
-                    {/* Typing indicator while processing */}
                     {(uiStatus === "submitted" || uiStatus === "streaming") && (
-                      <motion.div
-                        key="typing-indicator"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Message from="assistant">
-                          <MessageContent>
-                            <div className="flex items-center gap-1 py-1">
-                              {[0, 1, 2].map((i) => (
-                                <motion.span
-                                  key={i}
-                                  className="size-1.5 rounded-full bg-foreground/80"
-                                  animate={{
-                                    y: [0, -4, 0],
-                                  }}
-                                  transition={{
-                                    duration: 0.6,
-                                    repeat: Infinity,
-                                    delay: i * 0.15,
-                                    ease: "easeInOut",
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          </MessageContent>
-                        </Message>
-                      </motion.div>
+                      <TypingIndicator />
                     )}
                   </motion.div>
                 )}
@@ -618,7 +372,7 @@ export default function ChatPage({
             </ConversationContent>
             <ConversationScrollButton />
           </Conversation>
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 pb-4">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 py-4 backdrop-blur-lg bg-background/90 shadow-lg">
             <div className="pointer-events-none absolute inset-x-0 -top-12 h-12" />
             <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl flex-col gap-3 px-4">
               {uiStatus === "ready" && !isLoadingMessages ? (
@@ -640,7 +394,7 @@ export default function ChatPage({
               )}
               <PromptInput
                 onSubmit={handleSubmit}
-                className="[&_[data-slot=input-group]]:shadow-xl! [&_[data-slot=input-group]]:bg-secondary [&_[data-slot=input-group]]:overflow-visible"
+                className="**:data-[slot=input-group]:shadow-xl! **:data-[slot=input-group]:bg-secondary **:data-[slot=input-group]:overflow-visible"
               >
                 <PromptInputBody>
                   <PromptInputTextarea

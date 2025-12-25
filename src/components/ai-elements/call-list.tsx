@@ -3,21 +3,10 @@
 import { ChevronRightIcon, PhoneIcon } from "lucide-react";
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
-import { CallCard, type CallStatus } from "./call-card";
+import type { CallPreview } from "@/types/call";
+import { CallCard } from "./call-card";
 
-export type CallPreview = {
-  id: string;
-  title: string;
-  start_time: string;
-  duration?: number | null;
-  status: { code: CallStatus };
-  companies?: Array<{ name?: string | null; domain: string }>;
-  participants?: Array<{
-    name?: string | null;
-    email?: string | null;
-    id: number;
-  }>;
-};
+export type { CallPreview };
 
 export type CallListProps = ComponentProps<"div"> & {
   calls: CallPreview[];

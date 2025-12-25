@@ -8,19 +8,10 @@ import {
 import { type ComponentProps, useMemo, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { cn, formatDuration } from "@/lib/utils";
+import { cn, formatDuration, getAvatarColor, getInitials } from "@/lib/utils";
+import type { Participant, TranscriptTurn } from "@/types/call";
 
-export type TranscriptTurn = {
-  party_id: number;
-  turn_text: string;
-  timestamp: string;
-};
-
-export type Participant = {
-  name?: string | null;
-  email?: string | null;
-  id: number;
-};
+export type { Participant, TranscriptTurn };
 
 export type TranscriptProps = ComponentProps<"div"> & {
   callId: string;
@@ -30,35 +21,6 @@ export type TranscriptProps = ComponentProps<"div"> & {
   context?: string;
   maxVisibleTurns?: number;
 };
-
-function getInitials(name?: string | null, email?: string | null): string {
-  if (name) {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  }
-  if (email) {
-    return email[0].toUpperCase();
-  }
-  return "?";
-}
-
-function getParticipantColor(participantId: number): string {
-  const colors = [
-    "bg-blue-500",
-    "bg-emerald-500",
-    "bg-purple-500",
-    "bg-orange-500",
-    "bg-pink-500",
-    "bg-cyan-500",
-    "bg-amber-500",
-    "bg-indigo-500",
-  ];
-  return colors[participantId % colors.length];
-}
 
 function formatTimestamp(timestamp: string): string {
   // Parse MM:SS or HH:MM:SS format
@@ -155,7 +117,7 @@ export const Transcript = ({
               <Avatar
                 className={cn(
                   "size-8 shrink-0 text-xs",
-                  getParticipantColor(turn.party_id),
+                  getAvatarColor(String(turn.party_id)),
                 )}
               >
                 <AvatarFallback className="bg-transparent text-white">
