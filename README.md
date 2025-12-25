@@ -78,14 +78,14 @@ flowchart TB
 
 ## Tech Stack
 
-| Category         | Technologies                                |
-| ---------------- | ------------------------------------------- |
-| **Framework**    | Next.js 16, React 19, TypeScript 5          |
-| **AI**           | Mastra Core, AI SDK (Vercel), Google Gemini |
-| **State**        | TanStack Query, tRPC                        |
-| **Storage**      | PostgreSQL (via @mastra/pg)                 |
-| **Styling**      | Tailwind CSS 4, Radix UI, Motion            |
-| **Code Quality** | Biome (lint + format)                       |
+| Category         | Technologies                            |
+| ---------------- | --------------------------------------- |
+| **Framework**    | Next.js 16, React 19, TypeScript 5      |
+| **AI**           | Mastra Core, AI SDK (Vercel), Anthropic |
+| **State**        | TanStack Query, tRPC                    |
+| **Storage**      | PostgreSQL (via @mastra/pg)             |
+| **Styling**      | Tailwind CSS 4, Radix UI, Motion        |
+| **Code Quality** | Biome (lint + format)                   |
 
 ---
 
@@ -102,7 +102,6 @@ flowchart TB
 Create a `.env.local` file with the required variables:
 
 - `ANTHROPIC_API_KEY` — Anthropic API key
-- `GOOGLE_GENERATIVE_AI_API_KEY` — Google AI API key
 - `GLYPHIC_API_KEY` — Glyphic API key
 - `GLYPHIC_BASE_URL` — Glyphic API base URL
 - `DATABASE_URL` — PostgreSQL connection string
