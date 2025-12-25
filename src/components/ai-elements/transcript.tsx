@@ -238,38 +238,3 @@ export const Transcript = ({
     </div>
   );
 };
-
-// Skeleton for loading state
-export const TranscriptSkeleton = ({ count = 5 }: { count?: number }) => {
-  const items = Array.from({ length: count }, (_, i) => ({
-    id: `skeleton-turn-${i}`,
-    isLeft: i % 2 === 0,
-  }));
-  return (
-    <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
-      {items.map((item) => (
-        <div
-          key={item.id}
-          className={cn(
-            "flex gap-3 animate-pulse",
-            item.isLeft ? "flex-row" : "flex-row-reverse",
-          )}
-        >
-          <div className="size-8 shrink-0 rounded-full bg-muted" />
-          <div
-            className={cn(
-              "flex max-w-[80%] flex-col gap-1",
-              item.isLeft ? "items-start" : "items-end",
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-20 rounded bg-muted" />
-              <div className="h-3 w-12 rounded bg-muted" />
-            </div>
-            <div className="h-16 w-48 rounded-lg bg-muted" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};

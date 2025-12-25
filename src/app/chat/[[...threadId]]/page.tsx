@@ -4,20 +4,13 @@ import { useChat } from "@ai-sdk/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ToolUIPart } from "ai";
 import { DefaultChatTransport } from "ai";
-import { Loader2, Sparkle, Sparkles } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  CallDetail,
-  CallDetailSkeleton,
-} from "@/components/ai-elements/call-detail";
-import {
-  CallInsights,
-  CallInsightsSkeleton,
-} from "@/components/ai-elements/call-insights";
+import { CallDetail } from "@/components/ai-elements/call-detail";
 // Generative UI components
-import { CallList, CallListSkeleton } from "@/components/ai-elements/call-list";
+import { CallList } from "@/components/ai-elements/call-list";
 import {
   Conversation,
   ConversationContent,
@@ -30,10 +23,7 @@ import {
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
-import {
-  ParticipantList,
-  ParticipantListSkeleton,
-} from "@/components/ai-elements/participant-list";
+import { ParticipantList } from "@/components/ai-elements/participant-list";
 import {
   PromptInput,
   PromptInputBody,
@@ -47,15 +37,12 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
+import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
-import {
-  Transcript,
-  TranscriptSkeleton,
-} from "@/components/ai-elements/transcript";
+import { Transcript } from "@/components/ai-elements/transcript";
 // Tool input types for type-safe casting
 import type {
   ShowCallInfoInput,
-  ShowCallInsightsInput,
   ShowCallListInput,
   ShowParticipantsInput,
   ShowTranscriptInput,
@@ -72,14 +59,22 @@ const initialSuggestions = [
 // Tool ID for suggest-follow-ups (matches the variable name, not the tool id)
 const SUGGEST_TOOL_ID = "suggestFollowUpsTool";
 
-// Display tool IDs - these render custom UI components
-const DISPLAY_TOOL_IDS = [
+// Client tool IDs - these render custom UI components
+const CLIENT_TOOL_IDS = [
   "showCallListTool",
   "showCallInfoTool",
   "showTranscriptTool",
-  "showCallInsightsTool",
   "showParticipantsTool",
 ];
+
+// Server tool IDs - these call the API and show status
+const SERVER_TOOL_IDS: Record<string, { loading: string; done: string }> = {
+  listCallsTool: { loading: "Searching calls", done: "Searched calls" },
+  getCallInfoTool: {
+    loading: "Retrieving call information",
+    done: "Retrieved call information",
+  },
+};
 
 const RESOURCE_ID = "glyphic-chat";
 
@@ -316,7 +311,7 @@ export default function ChatPage({
       const toolId = part.type.replace("tool-", "");
       const toolPart = part as ToolUIPart;
       return (
-        DISPLAY_TOOL_IDS.includes(toolId) &&
+        CLIENT_TOOL_IDS.includes(toolId) &&
         toolPart.state === "output-available"
       );
     });
@@ -339,26 +334,55 @@ export default function ChatPage({
     return [];
   };
 
-  // Helper to get display tool parts for generative UI
-  const getDisplayToolParts = (message: (typeof messages)[number]) => {
+  // Helper to get client tool parts for generative UI
+  const getClientToolParts = (message: (typeof messages)[number]) => {
     if (message.parts) {
       return message.parts.filter((part) => {
         if (!part.type.startsWith("tool-")) return false;
         const toolId = part.type.replace("tool-", "");
-        return DISPLAY_TOOL_IDS.includes(toolId);
+        return CLIENT_TOOL_IDS.includes(toolId);
       }) as ToolUIPart[];
     }
     return [];
   };
 
-  // Render display tool as custom UI component
-  const renderDisplayTool = (part: ToolUIPart, key: string) => {
-    const toolId = part.type.replace("tool-", "");
-    const isLoading =
-      part.state === "input-available" || part.state === "input-streaming";
-    const hasError = part.state === "output-error";
+  // Helper to get server tool parts
+  const getServerToolParts = (message: (typeof messages)[number]) => {
+    if (message.parts) {
+      return message.parts.filter((part) => {
+        if (!part.type.startsWith("tool-")) return false;
+        const toolId = part.type.replace("tool-", "");
+        return toolId in SERVER_TOOL_IDS;
+      }) as ToolUIPart[];
+    }
+    return [];
+  };
 
-    if (hasError) {
+  // Render server tool status
+  const renderServerTool = (part: ToolUIPart, key: string) => {
+    const toolId = part.type.replace("tool-", "");
+    const labels = SERVER_TOOL_IDS[toolId];
+    if (!labels) return null;
+
+    const isLoading =
+      part.state !== "output-available" && part.state !== "output-error";
+
+    return (
+      <div key={key} className="text-sm text-muted-foreground">
+        {isLoading ? (
+          <Shimmer className="text-muted-foreground">{`${labels.loading}...`}</Shimmer>
+        ) : (
+          <span>{labels.done}</span>
+        )}
+      </div>
+    );
+  };
+
+  // Render client tool as custom UI component
+  const renderClientTool = (part: ToolUIPart, key: string) => {
+    const toolId = part.type.replace("tool-", "");
+
+    if (part.state === "output-error") {
       return (
         <div
           key={key}
@@ -369,9 +393,11 @@ export default function ChatPage({
       );
     }
 
+    // Don't render until output is available
+    if (part.state !== "output-available") return null;
+
     switch (toolId) {
       case "showCallListTool": {
-        if (isLoading) return <CallListSkeleton key={key} />;
         const input = part.input as ShowCallListInput;
         return (
           <CallList
@@ -384,13 +410,11 @@ export default function ChatPage({
       }
 
       case "showCallInfoTool": {
-        if (isLoading) return <CallDetailSkeleton key={key} />;
         const input = part.input as ShowCallInfoInput;
         return <CallDetail key={key} call={input.call} />;
       }
 
       case "showTranscriptTool": {
-        if (isLoading) return <TranscriptSkeleton key={key} />;
         const input = part.input as ShowTranscriptInput;
         return (
           <Transcript
@@ -404,21 +428,7 @@ export default function ChatPage({
         );
       }
 
-      case "showCallInsightsTool": {
-        if (isLoading) return <CallInsightsSkeleton key={key} />;
-        const input = part.input as ShowCallInsightsInput;
-        return (
-          <CallInsights
-            key={key}
-            callId={input.callId}
-            callTitle={input.callTitle}
-            insights={input.insights}
-          />
-        );
-      }
-
       case "showParticipantsTool": {
-        if (isLoading) return <ParticipantListSkeleton key={key} />;
         const input = part.input as ShowParticipantsInput;
         return (
           <ParticipantList
@@ -535,19 +545,26 @@ export default function ChatPage({
                                   </Reasoning>
                                 ))}
 
+                                {getServerToolParts(message).map((part, idx) =>
+                                  renderServerTool(
+                                    part,
+                                    `server-${message.id}-${idx}`,
+                                  ),
+                                )}
+
+                                {getClientToolParts(message).map((part, idx) =>
+                                  renderClientTool(
+                                    part,
+                                    `client-${message.id}-${idx}`,
+                                  ),
+                                )}
+
                                 {getMessageText(message) && (
                                   <MessageContent>
                                     <MessageResponse>
                                       {getMessageText(message)}
                                     </MessageResponse>
                                   </MessageContent>
-                                )}
-
-                                {getDisplayToolParts(message).map((part, idx) =>
-                                  renderDisplayTool(
-                                    part,
-                                    `display-${message.id}-${idx}`,
-                                  ),
                                 )}
                               </div>
                             </Message>

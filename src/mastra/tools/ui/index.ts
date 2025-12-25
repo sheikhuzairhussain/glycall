@@ -2,7 +2,6 @@
 export { showCallListTool } from "./show-call-list";
 export { showCallInfoTool } from "./show-call-info";
 export { showTranscriptTool } from "./show-transcript";
-export { showCallInsightsTool } from "./show-call-insights";
 export { showParticipantsTool } from "./show-participants";
 
 // Export types for use in UI components
@@ -13,7 +12,6 @@ export type {
   TranscriptTurn,
   TranscriptParticipant,
 } from "./show-transcript";
-export type { ShowCallInsightsInput, Insight } from "./show-call-insights";
 export type {
   ShowParticipantsInput,
   Participant,

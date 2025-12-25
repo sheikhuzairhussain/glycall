@@ -28,15 +28,6 @@ const CallDetailSchema = z.object({
       }),
     )
     .optional(),
-  insights: z
-    .array(
-      z.object({
-        name: z.string(),
-        value: z.string().nullable().optional(),
-      }),
-    )
-    .nullable()
-    .optional(),
 });
 
 export type CallDetailData = z.infer<typeof CallDetailSchema>;
@@ -47,7 +38,6 @@ Use this tool AFTER fetching call details with get-call-info to present the info
 The call will be displayed with:
 - Header with title, date, duration, and status
 - AI-generated summary
-- Key insights extracted from the call
 - Participant list with contact info
 - Company information
 - Link to original recording

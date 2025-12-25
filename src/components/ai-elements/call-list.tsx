@@ -104,35 +104,3 @@ export const CallList = ({
     </div>
   );
 };
-
-// Skeleton for loading state
-export const CallListSkeleton = ({ count = 4 }: { count?: number }) => (
-  <div className="grid gap-3 sm:grid-cols-2">
-    {Array.from({ length: count }).map((_, i) => (
-      <div
-        key={`call-skeleton-${
-          // biome-ignore lint/suspicious/noArrayIndexKey: Just some skeleton elements
-          i
-        }`}
-        className="flex flex-col gap-3 rounded-lg border bg-card p-4 animate-pulse"
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="h-4 w-3/4 rounded bg-muted" />
-          <div className="h-5 w-20 rounded-full bg-muted" />
-        </div>
-        <div className="flex gap-3">
-          <div className="h-3 w-24 rounded bg-muted" />
-          <div className="h-3 w-16 rounded bg-muted" />
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex -space-x-2">
-            {[1, 2, 3].map((j) => (
-              <div key={j} className="size-6 rounded-full bg-muted" />
-            ))}
-          </div>
-          <div className="h-3 w-20 rounded bg-muted" />
-        </div>
-      </div>
-    ))}
-  </div>
-);

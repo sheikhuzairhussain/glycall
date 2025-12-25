@@ -5,7 +5,6 @@ import {
   showCallListTool,
   showCallInfoTool,
   showTranscriptTool,
-  showCallInsightsTool,
   showParticipantsTool,
 } from "../tools/ui/index";
 import { getCurrentTimeTool } from "../tools/get-current-time";
@@ -58,7 +57,6 @@ After fetching data, you MUST use display tools to show visual results to the us
 - Use show-call-list after fetching calls with list-calls to display them as visual cards
 - Use show-call-info after fetching call details with get-call-info to display rich call information
 - Use show-transcript to display relevant portions of a conversation in a chat-like format
-- Use show-call-insights to highlight key extracted insights from calls
 - Use show-participants to display participant information with contact details
 
 ### Text Response When Using Display Tools
@@ -113,7 +111,6 @@ export const glyphicAgent = new Agent({
     showCallListTool,
     showCallInfoTool,
     showTranscriptTool,
-    showCallInsightsTool,
     showParticipantsTool,
     // Follow-up suggestions
     suggestFollowUpsTool,

@@ -17,7 +17,6 @@ import {
   ExternalLinkIcon,
   ChevronDownIcon,
   FileTextIcon,
-  LightbulbIcon,
   UsersIcon,
 } from "lucide-react";
 import type { ComponentProps } from "react";
@@ -43,7 +42,6 @@ export type CallDetailData = {
   url_link?: string | null;
   companies?: Array<{ name?: string | null; domain: string }>;
   participants?: Participant[];
-  insights?: Array<{ name: string; value?: string | null }> | null;
 };
 
 export type CallDetailProps = ComponentProps<"div"> & {
@@ -77,8 +75,6 @@ function formatDate(dateString: string): string {
 }
 
 export const CallDetail = ({ className, call, ...props }: CallDetailProps) => {
-  const validInsights = call.insights?.filter((i) => i.value) || [];
-
   return (
     <div
       className={cn(
@@ -91,14 +87,21 @@ export const CallDetail = ({ className, call, ...props }: CallDetailProps) => {
       <div className="flex flex-col gap-3 bg-muted/30 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <h2 className="font-semibold text-lg leading-tight">{call.title}</h2>
+            <h2 className="font-semibold text-lg leading-tight">
+              {call.title}
+            </h2>
             <CallStatusBadge status={call.status.code} />
           </div>
           {call.url_link && (
-            <Button variant="outline" size="sm" className="gap-1.5 shrink-0" asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 shrink-0"
+              asChild
+            >
               <a href={call.url_link} target="_blank" rel="noopener noreferrer">
                 <ExternalLinkIcon className="size-4" />
-                View recording
+                View in Glyphic
               </a>
             </Button>
           )}
@@ -154,44 +157,9 @@ export const CallDetail = ({ className, call, ...props }: CallDetailProps) => {
         </div>
       )}
 
-      <Separator />
-
-      {/* Insights */}
-      {validInsights.length > 0 && (
-        <div className="px-4">
-          <Collapsible defaultOpen>
-            <CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left">
-              <div className="flex items-center gap-2">
-                <LightbulbIcon className="size-4 text-muted-foreground" />
-                <span className="font-medium text-sm">Key Insights</span>
-                <Badge variant="secondary" className="text-xs">
-                  {validInsights.length}
-                </Badge>
-              </div>
-              <ChevronDownIcon className="size-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="grid gap-2 py-2 sm:grid-cols-2">
-                {validInsights.map((insight, index) => (
-                  <div
-                    key={`${insight.name}-${index}`}
-                    className="rounded-md border bg-muted/30 p-2.5"
-                  >
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      {insight.name}
-                    </p>
-                    <p className="mt-1 text-sm">{insight.value}</p>
-                  </div>
-                ))}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
+      {call.summary && call.participants && call.participants.length > 0 && (
+        <Separator />
       )}
-
-      {validInsights.length > 0 &&
-        call.participants &&
-        call.participants.length > 0 && <Separator />}
 
       {/* Participants */}
       {call.participants && call.participants.length > 0 && (
@@ -244,39 +212,3 @@ export const CallDetail = ({ className, call, ...props }: CallDetailProps) => {
     </div>
   );
 };
-
-// Skeleton for loading state
-export const CallDetailSkeleton = () => (
-  <div className="flex flex-col gap-4 rounded-lg border bg-card overflow-hidden animate-pulse">
-    <div className="flex flex-col gap-3 bg-muted/30 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="h-6 w-2/3 rounded bg-muted" />
-        <div className="h-6 w-24 rounded-full bg-muted" />
-      </div>
-      <div className="flex gap-4">
-        <div className="h-4 w-40 rounded bg-muted" />
-        <div className="h-4 w-20 rounded bg-muted" />
-      </div>
-      <div className="flex gap-1.5">
-        <div className="h-5 w-24 rounded-full bg-muted" />
-      </div>
-    </div>
-    <div className="space-y-2 px-4">
-      <div className="h-4 w-20 rounded bg-muted" />
-      <div className="space-y-1.5">
-        <div className="h-3 w-full rounded bg-muted" />
-        <div className="h-3 w-full rounded bg-muted" />
-        <div className="h-3 w-3/4 rounded bg-muted" />
-      </div>
-    </div>
-    <Separator />
-    <div className="grid gap-2 px-4 pb-4 sm:grid-cols-2">
-      {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="rounded-md border bg-muted/30 p-2.5">
-          <div className="h-3 w-16 rounded bg-muted" />
-          <div className="mt-2 h-4 w-full rounded bg-muted" />
-        </div>
-      ))}
-    </div>
-  </div>
-);

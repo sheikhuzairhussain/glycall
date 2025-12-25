@@ -199,27 +199,3 @@ export const ParticipantList = ({
     </div>
   );
 };
-
-// Skeleton for loading state
-export const ParticipantListSkeleton = ({ count = 4 }: { count?: number }) => {
-  const items = Array.from(
-    { length: count },
-    (_, i) => `skeleton-participant-${i}`,
-  );
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {items.map((id) => (
-        <div
-          key={id}
-          className="flex items-center gap-3 rounded-lg border bg-card p-3 animate-pulse"
-        >
-          <div className="size-10 shrink-0 rounded-full bg-muted" />
-          <div className="flex flex-1 flex-col gap-1.5">
-            <div className="h-4 w-24 rounded bg-muted" />
-            <div className="h-3 w-32 rounded bg-muted" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
