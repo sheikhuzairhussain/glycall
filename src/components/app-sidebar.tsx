@@ -33,11 +33,6 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 
@@ -115,52 +110,41 @@ function ChatHistorySection({
             const isActive = activeThreadId === thread.id;
             return (
               <SidebarMenuItem key={thread.id}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div
-                      className={cn(
-                        "group/menu-item flex w-full items-center rounded-md transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                        isActive &&
-                          "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
-                      )}
-                    >
-                      <Link
-                        href={`/chat/${thread.id}`}
-                        className="flex flex-1 items-center gap-2 overflow-hidden p-2 text-sm"
-                      >
-                        <MessageSquare className="size-4 shrink-0 opacity-60" />
-                        <span className="truncate">{title}</span>
-                      </Link>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className="mr-1 hidden size-7 shrink-0 items-center justify-center rounded-md hover:bg-black/10 group-hover/menu-item:flex group-focus-within/menu-item:flex data-[state=open]:flex"
-                          >
-                            <MoreHorizontal className="size-4" />
-                            <span className="sr-only">More options</span>
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent side="right" align="center">
-                          <DropdownMenuItem
-                            onClick={() => onDeleteThread(thread)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="size-4 text-2xl" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    align="start"
-                    className="max-w-xs"
+                <div
+                  className={cn(
+                    "group/menu-item flex w-full items-center rounded-md transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    isActive &&
+                      "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
+                  )}
+                >
+                  <Link
+                    href={`/chat/${thread.id}`}
+                    className="flex flex-1 items-center gap-2 overflow-hidden p-2 text-sm"
                   >
-                    {title}
-                  </TooltipContent>
-                </Tooltip>
+                    <MessageSquare className="size-4 shrink-0 opacity-60" />
+                    <span className="truncate">{title}</span>
+                  </Link>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="mr-1 hidden size-7 shrink-0 items-center justify-center rounded-md hover:bg-black/10 group-hover/menu-item:flex group-focus-within/menu-item:flex data-[state=open]:flex"
+                      >
+                        <MoreHorizontal className="size-4" />
+                        <span className="sr-only">More options</span>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="center">
+                      <DropdownMenuItem
+                        onClick={() => onDeleteThread(thread)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="size-4 text-2xl" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </SidebarMenuItem>
             );
           })}
@@ -211,81 +195,82 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   );
 
   const groupedThreads = React.useMemo(() => {
-    if (!data?.threads) return null;
+    if (!data?.threads || data.threads.length === 0) return null;
     return groupThreadsByDate(data.threads as Thread[]);
   }, [data?.threads]);
 
   return (
     <Sidebar variant="sidebar" {...props}>
       <SidebarHeader className="h-12 border-b border-sidebar-border">
-        <div className="flex h-full items-center justify-between px-2">
+        <div className="flex h-full items-center justify-between pl-2 pr-1">
           <Link href="/" className="flex items-center gap-2">
             <div className="flex size-6 items-center justify-center rounded-md bg-gray-500">
               <Sparkles className="size-3.5 text-white" />
             </div>
             <span className="font-semibold tracking-tight">Glycall</span>
           </Link>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8" asChild>
-                <Link href="/">
-                  <Plus className="size-4" />
-                  <span className="sr-only">New chat</span>
-                </Link>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">New chat</TooltipContent>
-          </Tooltip>
+          <Button variant="ghost" size="icon" className="size-8" asChild>
+            <Link href="/">
+              <Plus className="size-4" />
+              <span className="sr-only">New chat</span>
+            </Link>
+          </Button>
         </div>
       </SidebarHeader>
-      <SidebarContent>
-        <ScrollArea className="h-full">
-          {isLoading ? (
+      <SidebarContent className="flex flex-col">
+        {isLoading ? (
+          <ScrollArea className="h-full">
             <ChatHistorySkeleton />
-          ) : groupedThreads ? (
-            <>
-              <ChatHistorySection
-                label="Today"
-                threads={groupedThreads.today}
-                activeThreadId={activeThreadId}
-                onDeleteThread={handleDeleteThread}
-              />
-              <ChatHistorySection
-                label="Yesterday"
-                threads={groupedThreads.yesterday}
-                activeThreadId={activeThreadId}
-                onDeleteThread={handleDeleteThread}
-              />
-              <ChatHistorySection
-                label="Previous 7 Days"
-                threads={groupedThreads.previous7Days}
-                activeThreadId={activeThreadId}
-                onDeleteThread={handleDeleteThread}
-              />
-              <ChatHistorySection
-                label="Previous 30 Days"
-                threads={groupedThreads.previous30Days}
-                activeThreadId={activeThreadId}
-                onDeleteThread={handleDeleteThread}
-              />
-              <ChatHistorySection
-                label="Older"
-                threads={groupedThreads.older}
-                activeThreadId={activeThreadId}
-                onDeleteThread={handleDeleteThread}
-              />
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center p-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                No conversations yet
-              </p>
-              <p className="text-xs text-muted-foreground/70">
-                Start a new chat to begin
-              </p>
+          </ScrollArea>
+        ) : groupedThreads ? (
+          <ScrollArea className="h-full">
+            <ChatHistorySection
+              label="Today"
+              threads={groupedThreads.today}
+              activeThreadId={activeThreadId}
+              onDeleteThread={handleDeleteThread}
+            />
+            <ChatHistorySection
+              label="Yesterday"
+              threads={groupedThreads.yesterday}
+              activeThreadId={activeThreadId}
+              onDeleteThread={handleDeleteThread}
+            />
+            <ChatHistorySection
+              label="Previous 7 Days"
+              threads={groupedThreads.previous7Days}
+              activeThreadId={activeThreadId}
+              onDeleteThread={handleDeleteThread}
+            />
+            <ChatHistorySection
+              label="Previous 30 Days"
+              threads={groupedThreads.previous30Days}
+              activeThreadId={activeThreadId}
+              onDeleteThread={handleDeleteThread}
+            />
+            <ChatHistorySection
+              label="Older"
+              threads={groupedThreads.older}
+              activeThreadId={activeThreadId}
+              onDeleteThread={handleDeleteThread}
+            />
+          </ScrollArea>
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+            <div className="relative mb-4">
+              <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-br from-gray-200 to-gray-300 opacity-40 blur-xl dark:from-gray-700 dark:to-gray-800" />
+              <div className="relative flex size-14 items-center justify-center rounded-2xl border border-gray-200/60 bg-gradient-to-br from-gray-50 to-gray-100 shadow-sm dark:border-gray-700/60 dark:from-gray-800 dark:to-gray-900">
+                <MessageSquare className="size-6 text-gray-400 dark:text-gray-500" />
+              </div>
             </div>
-          )}
-        </ScrollArea>
+            <h3 className="mb-1 text-sm font-medium text-foreground/80">
+              No conversations yet
+            </h3>
+            <p className="max-w-[180px] text-xs leading-relaxed text-muted-foreground/70">
+              Start chatting to explore your call data and insights
+            </p>
+          </div>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <div className="px-3 py-2 text-center">
