@@ -60,17 +60,44 @@ function getParticipantColor(participantId: number): string {
   return colors[participantId % colors.length];
 }
 
-function formatTimestamp(timestamp: string): string {
-  try {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  } catch {
-    return timestamp;
+function formatDuration(totalSeconds: number): string {
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = Math.floor(totalSeconds % 60);
+
+  const parts: string[] = [];
+  if (hrs > 0) {
+    parts.push(`${hrs} ${hrs === 1 ? "hour" : "hours"}`);
   }
+  if (mins > 0) {
+    parts.push(`${mins} ${mins === 1 ? "minute" : "minutes"}`);
+  }
+  if (secs > 0 || parts.length === 0) {
+    parts.push(`${secs} ${secs === 1 ? "second" : "seconds"}`);
+  }
+
+  if (parts.length === 1) return parts[0];
+  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+  return `${parts[0]}, ${parts[1]} and ${parts[2]}`;
+}
+
+function formatTimestamp(timestamp: string): string {
+  // Parse MM:SS or HH:MM:SS format
+  const timeMatch = timestamp.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (timeMatch) {
+    const [, first, second, third] = timeMatch;
+    let totalSeconds: number;
+    if (third !== undefined) {
+      // HH:MM:SS format
+      totalSeconds = Number(first) * 3600 + Number(second) * 60 + Number(third);
+    } else {
+      // MM:SS format
+      totalSeconds = Number(first) * 60 + Number(second);
+    }
+    return formatDuration(totalSeconds);
+  }
+
+  return timestamp;
 }
 
 export const Transcript = ({
@@ -163,14 +190,14 @@ export const Transcript = ({
                   isLeft ? "items-start" : "items-end",
                 )}
               >
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   <span className="font-medium">
                     {participant?.name ||
                       participant?.email ||
                       `Speaker ${turn.party_id}`}
-                  </span>
-                  <span>{formatTimestamp(turn.timestamp)}</span>
-                </div>
+                  </span>{" "}
+                  @ {formatTimestamp(turn.timestamp)}
+                </span>
                 <div
                   className={cn(
                     "rounded-lg px-3 py-2 text-sm",

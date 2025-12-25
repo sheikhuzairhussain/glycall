@@ -4,7 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ToolUIPart } from "ai";
 import { DefaultChatTransport } from "ai";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkle, Sparkles } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -474,7 +474,7 @@ export default function ChatPage({
       ) : (
         <>
           <Conversation className="min-h-0 flex-1">
-            <ConversationContent className="mx-auto w-full max-w-3xl pb-8">
+            <ConversationContent className="mx-auto w-full max-w-3xl pb-48">
               <AnimatePresence mode="wait">
                 {isLoadingMessages ? (
                   <motion.div
@@ -566,16 +566,18 @@ export default function ChatPage({
             </ConversationContent>
             <ConversationScrollButton />
           </Conversation>
-          <div className="relative shrink-0 pb-4">
-            <div className="pointer-events-none absolute inset-x-0 -top-8 h-8" />
-            <div className="relative mx-auto w-full max-w-3xl space-y-3 px-4">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 pb-4">
+            <div className="pointer-events-none absolute inset-x-0 -top-12 h-12" />
+            <div className="pointer-events-auto relative mx-auto w-full max-w-3xl space-y-3 px-4">
               {uiStatus === "ready" && !isLoadingMessages ? (
                 <Suggestions key={currentSuggestions.join("|")}>
+                  <Sparkles className="size-4 text-muted-foreground fill-primary stroke-none" />
                   {currentSuggestions.map((suggestion, index) => (
                     <Suggestion
                       key={`${index}-${suggestion}`}
                       onClick={() => handleSuggestionClick(suggestion)}
                       suggestion={suggestion}
+                      className="bg-background!"
                     />
                   ))}
                 </Suggestions>
@@ -584,11 +586,14 @@ export default function ChatPage({
                   <Suggestion suggestion="" className="opacity-0 w-0" />
                 </Suggestions>
               )}
-              <PromptInput onSubmit={handleSubmit}>
+              <PromptInput
+                onSubmit={handleSubmit}
+                className="[&_[data-slot=input-group]]:shadow-xl! [&_[data-slot=input-group]]:bg-secondary [&_[data-slot=input-group]]:overflow-visible"
+              >
                 <PromptInputBody>
                   <PromptInputTextarea
                     onChange={(event) => setInputValue(event.target.value)}
-                    placeholder="Ask about your sales calls..."
+                    placeholder="Ask Glycall about your sales calls..."
                     value={inputValue}
                   />
                 </PromptInputBody>

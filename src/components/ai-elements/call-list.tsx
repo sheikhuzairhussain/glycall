@@ -1,8 +1,8 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { PhoneIcon, ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, PhoneIcon } from "lucide-react";
 import type { ComponentProps } from "react";
+import { cn } from "@/lib/utils";
 import { CallCard, type CallStatus } from "./call-card";
 
 export type CallPreview = {
@@ -108,9 +108,12 @@ export const CallList = ({
 // Skeleton for loading state
 export const CallListSkeleton = ({ count = 4 }: { count?: number }) => (
   <div className="grid gap-3 sm:grid-cols-2">
-    {Array.from({ length: count }).map((i) => (
+    {Array.from({ length: count }).map((_, i) => (
       <div
-        key={`call-skeleton-${i}`}
+        key={`call-skeleton-${
+          // biome-ignore lint/suspicious/noArrayIndexKey: Just some skeleton elements
+          i
+        }`}
         className="flex flex-col gap-3 rounded-lg border bg-card p-4 animate-pulse"
       >
         <div className="flex items-start justify-between gap-2">

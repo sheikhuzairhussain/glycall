@@ -1,25 +1,18 @@
 "use client";
 
-import {
-  BanIcon,
-  BuildingIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  LoaderIcon,
-  XCircleIcon,
-} from "lucide-react";
+import { BuildingIcon, CalendarIcon, ClockIcon } from "lucide-react";
 import type { ComponentProps } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { CallStatusBadge, type CallStatus } from "./call-status-badge";
+import {
+  ParticipantAvatar,
+  ParticipantListHoverCard,
+  type Participant,
+} from "./participant-hover-card";
 
-export type CallStatus =
-  | "queued"
-  | "in_progress"
-  | "completed"
-  | "failed"
-  | "cancelled";
+export type { CallStatus };
 
 export type CallCardProps = ComponentProps<"button"> & {
   id: string;
@@ -28,47 +21,8 @@ export type CallCardProps = ComponentProps<"button"> & {
   duration?: number | null;
   status: CallStatus;
   companies?: Array<{ name?: string | null; domain: string }>;
-  participants?: Array<{
-    name?: string | null;
-    email?: string | null;
-    id: number;
-  }>;
+  participants?: Participant[];
   onClick?: () => void;
-};
-
-const statusConfig: Record<
-  CallStatus,
-  {
-    label: string;
-    icon: React.ReactNode;
-    variant: "default" | "secondary" | "destructive" | "outline";
-  }
-> = {
-  completed: {
-    label: "Completed",
-    icon: <CheckCircleIcon className="size-3" />,
-    variant: "default",
-  },
-  in_progress: {
-    label: "In Progress",
-    icon: <LoaderIcon className="size-3 animate-spin" />,
-    variant: "secondary",
-  },
-  queued: {
-    label: "Queued",
-    icon: <ClockIcon className="size-3" />,
-    variant: "outline",
-  },
-  failed: {
-    label: "Failed",
-    icon: <XCircleIcon className="size-3" />,
-    variant: "destructive",
-  },
-  cancelled: {
-    label: "Cancelled",
-    icon: <BanIcon className="size-3" />,
-    variant: "outline",
-  },
 };
 
 function formatDuration(seconds: number): string {
@@ -112,49 +66,6 @@ function formatDate(dateString: string): string {
   });
 }
 
-function getInitials(name?: string | null, email?: string | null): string {
-  if (name) {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  }
-  if (email) {
-    return email[0].toUpperCase();
-  }
-  return "?";
-}
-
-// Generate consistent color from string
-function getAvatarColor(identifier: string): string {
-  const colors = [
-    "bg-red-500",
-    "bg-orange-500",
-    "bg-amber-500",
-    "bg-yellow-500",
-    "bg-lime-500",
-    "bg-green-500",
-    "bg-emerald-500",
-    "bg-teal-500",
-    "bg-cyan-500",
-    "bg-sky-500",
-    "bg-blue-500",
-    "bg-indigo-500",
-    "bg-violet-500",
-    "bg-purple-500",
-    "bg-fuchsia-500",
-    "bg-pink-500",
-    "bg-rose-500",
-  ];
-  let hash = 0;
-  for (let i = 0; i < identifier.length; i++) {
-    hash = identifier.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
-}
-
 export const CallCard = ({
   className,
   id,
@@ -167,7 +78,6 @@ export const CallCard = ({
   onClick,
   ...props
 }: CallCardProps) => {
-  const statusInfo = statusConfig[status];
   const displayParticipants = participants?.slice(0, 4) || [];
   const remainingCount = (participants?.length || 0) - 4;
 
@@ -182,16 +92,10 @@ export const CallCard = ({
       onClick={onClick}
       {...props}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="font-medium text-sm leading-tight line-clamp-2">
-          {title}
-        </h3>
-        <Badge variant={statusInfo.variant} className="shrink-0 gap-1 text-xs">
-          {statusInfo.icon}
-          {statusInfo.label}
-        </Badge>
-      </div>
+      {/* Title */}
+      <h3 className="font-medium text-sm leading-tight line-clamp-2 text-left">
+        {title}
+      </h3>
 
       {/* Meta info */}
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
@@ -206,43 +110,6 @@ export const CallCard = ({
           </span>
         )}
       </div>
-
-      {/* Participants */}
-      {displayParticipants.length > 0 && (
-        <div className="flex items-center gap-2">
-          <div className="flex -space-x-2">
-            {displayParticipants.map((participant) => (
-              <Avatar
-                key={participant.id}
-                className={cn(
-                  "size-6 border-2 border-background text-[10px]",
-                  getAvatarColor(
-                    participant.email ||
-                      participant.name ||
-                      String(participant.id),
-                  ),
-                )}
-              >
-                <AvatarFallback className="bg-transparent text-white">
-                  {getInitials(participant.name, participant.email)}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-            {remainingCount > 0 && (
-              <Avatar className="size-6 border-2 border-background bg-muted text-[10px]">
-                <AvatarFallback>+{remainingCount}</AvatarFallback>
-              </Avatar>
-            )}
-          </div>
-          <span className="text-xs text-muted-foreground">
-            {participants?.length === 1
-              ? displayParticipants[0].name ||
-                displayParticipants[0].email ||
-                "1 participant"
-              : `${participants?.length} participants`}
-          </span>
-        </div>
-      )}
 
       {/* Companies */}
       {companies && companies.length > 0 && (
@@ -259,6 +126,41 @@ export const CallCard = ({
           ))}
         </div>
       )}
+
+      {/* Footer: Participants + Status Badge */}
+      <div className="flex items-center justify-between gap-2">
+        {displayParticipants.length > 0 ? (
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-2">
+              {displayParticipants.map((participant) => (
+                <ParticipantAvatar key={participant.id} participant={participant} />
+              ))}
+              {remainingCount > 0 && (
+                <ParticipantListHoverCard
+                  participants={participants?.slice(4) || []}
+                  title={`+${remainingCount} more participants`}
+                >
+                  <Avatar className="size-6 border-2 border-background bg-muted text-[10px] cursor-pointer">
+                    <AvatarFallback>+{remainingCount}</AvatarFallback>
+                  </Avatar>
+                </ParticipantListHoverCard>
+              )}
+            </div>
+            <ParticipantListHoverCard participants={participants || []}>
+              <span className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                {participants?.length === 1
+                  ? displayParticipants[0].name ||
+                    displayParticipants[0].email ||
+                    "1 participant"
+                  : `${participants?.length} participants`}
+              </span>
+            </ParticipantListHoverCard>
+          </div>
+        ) : (
+          <div />
+        )}
+        <CallStatusBadge status={status} />
+      </div>
     </button>
   );
 };
