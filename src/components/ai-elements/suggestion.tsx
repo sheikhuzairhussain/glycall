@@ -71,7 +71,10 @@ export const Suggestions = ({
           exit="exit"
         >
           {Children.map(children, (child, index) => (
-            <motion.div key={index} variants={itemVariants}>
+            <motion.div
+              key={child?.toString() || index}
+              variants={itemVariants}
+            >
               {child}
             </motion.div>
           ))}
@@ -166,7 +169,11 @@ export const SuggestionsGrid = ({
     animate="visible"
   >
     {Children.map(children, (child, index) => (
-      <motion.div key={index} variants={gridItemVariants} className="h-full">
+      <motion.div
+        key={child?.toString() || index}
+        variants={gridItemVariants}
+        className="h-full"
+      >
         {child}
       </motion.div>
     ))}
