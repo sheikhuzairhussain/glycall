@@ -38,7 +38,12 @@ import {
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import {
+  Suggestion,
+  SuggestionCard,
+  Suggestions,
+  SuggestionsGrid,
+} from "@/components/ai-elements/suggestion";
 import { Transcript } from "@/components/ai-elements/transcript";
 // Tool input types for type-safe casting
 import type {
@@ -104,18 +109,15 @@ function WelcomeScreen({
         </div>
 
         {/* Suggestions */}
-        <div className="grid gap-2 sm:grid-cols-2">
+        <SuggestionsGrid>
           {initialSuggestions.map((suggestion) => (
-            <button
+            <SuggestionCard
               key={suggestion}
-              onClick={() => onSuggestionClick(suggestion)}
-              type="button"
-              className="cursor-pointer rounded-lg border bg-card px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent/50 flex items-start justify-start"
-            >
-              {suggestion}
-            </button>
+              suggestion={suggestion}
+              onClick={onSuggestionClick}
+            />
           ))}
-        </div>
+        </SuggestionsGrid>
       </div>
     </div>
   );

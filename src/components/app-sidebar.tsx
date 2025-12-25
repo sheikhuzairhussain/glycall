@@ -203,7 +203,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar variant="sidebar" {...props}>
       <SidebarHeader className="h-12 border-b border-sidebar-border">
         <div className="flex h-full items-center justify-between pl-2 pr-1">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/chat" className="flex items-center gap-2">
             <div className="flex size-6 items-center justify-center rounded-md bg-gray-500">
               <Sparkles className="size-3.5 text-white" />
             </div>
