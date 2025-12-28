@@ -10,6 +10,7 @@ import {
   showParticipantsTool,
   showTranscriptTool,
 } from "../tools/ui/index";
+import { env } from "@/lib/env";
 
 const INSTRUCTIONS = `
 You are a specialized sales call analyst that helps users search and analyze their historical sales calls stored in Glyphic.
@@ -98,7 +99,10 @@ Provide 2-4 contextual suggestions based on:
 5. ALWAYS call suggest-follow-ups as your final tool call in every response
 `;
 
-const model = anthropic("claude-sonnet-4-5");
+// Workaround for Mastra Beta being incompatible with Anthropic
+const model = env.MODEL_PROVIDER.includes("anthropic")
+  ? anthropic(env.MODEL_PROVIDER)
+  : env.MODEL_PROVIDER;
 
 export const glycallAgent = new Agent({
   id: "glycall-agent",
