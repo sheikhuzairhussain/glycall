@@ -101,7 +101,7 @@ Provide 2-4 contextual suggestions based on:
 
 // Workaround for Mastra Beta being incompatible with Anthropic
 const model = env.MODEL_PROVIDER.includes("anthropic")
-  ? anthropic(env.MODEL_PROVIDER)
+  ? anthropic(env.MODEL_PROVIDER.replace("anthropic/", ""))
   : env.MODEL_PROVIDER;
 
 export const glycallAgent = new Agent({

@@ -104,9 +104,16 @@ export default function ChatPage({
   });
 
   // Load initial messages when threadId exists
+  // Skip loading if already streaming to prevent state conflicts (especially with Anthropic)
   useEffect(() => {
     if (!threadId) {
       setIsLoadingMessages(false);
+      return;
+    }
+
+    // Don't load if we're currently streaming - this prevents race conditions
+    // where setMessages overwrites the streaming state
+    if (status === "streaming" || status === "submitted") {
       return;
     }
 
@@ -126,7 +133,7 @@ export default function ChatPage({
       }
     }
     loadMessages();
-  }, [threadId, setMessages]);
+  }, [threadId, setMessages, status]);
 
   // Handle initial message from sessionStorage (for new chats)
   useEffect(() => {
@@ -189,7 +196,7 @@ export default function ChatPage({
     }
   };
 
-  // Message part helpers using type guards
+  // Get combined message text for copy button
   const getMessageText = (message: (typeof messages)[number]) => {
     if (!message.parts) return "";
 
@@ -211,22 +218,70 @@ export default function ChatPage({
     return textParts.map((part) => part.text).join("");
   };
 
-  const getReasoningParts = (message: (typeof messages)[number]) => {
-    return message.parts?.filter(isReasoningPart) ?? [];
-  };
+  // Render a single message part based on its type
+  const renderMessagePart = (
+    part: NonNullable<(typeof messages)[number]["parts"]>[number],
+    message: (typeof messages)[number],
+    partIndex: number,
+    isLastMessage: boolean,
+    isCurrentlyStreaming: boolean,
+  ) => {
+    const partKey = `part-${message.id}-${partIndex}`;
 
-  const getClientToolParts = (message: (typeof messages)[number]) => {
-    return (message.parts?.filter((part) => {
-      if (!isToolPart(part)) return false;
-      return isClientToolId(getToolId(part.type));
-    }) ?? []) as ToolUIPart[];
-  };
+    // Reasoning parts
+    if (isReasoningPart(part)) {
+      // Check if this is the last part of a streaming message
+      const isReasoningStreaming =
+        isLastMessage &&
+        isCurrentlyStreaming &&
+        partIndex === (message.parts?.length ?? 0) - 1;
 
-  const getServerToolParts = (message: (typeof messages)[number]) => {
-    return (message.parts?.filter((part) => {
-      if (!isToolPart(part)) return false;
-      return getToolId(part.type) in SERVER_TOOL_LABELS;
-    }) ?? []) as ToolUIPart[];
+      return (
+        <Reasoning key={partKey} isStreaming={isReasoningStreaming}>
+          <ReasoningTrigger />
+          <ReasoningContent>{part.text}</ReasoningContent>
+        </Reasoning>
+      );
+    }
+
+    // Tool parts (server and client)
+    if (isToolPart(part)) {
+      const toolId = getToolId(part.type);
+      const toolPart = part as ToolUIPart;
+
+      // Server tools (show loading/done status)
+      if (toolId in SERVER_TOOL_LABELS) {
+        return (
+          <ServerToolStatus
+            key={partKey}
+            part={toolPart}
+            toolKey={partKey}
+          />
+        );
+      }
+
+      // Client tools (render custom UI)
+      if (isClientToolId(toolId)) {
+        return (
+          <ClientToolUI
+            key={partKey}
+            part={toolPart}
+            toolKey={partKey}
+          />
+        );
+      }
+    }
+
+    // Text parts
+    if (isTextPart(part) && part.text) {
+      return (
+        <MessageContent key={partKey}>
+          <MessageResponse>{part.text}</MessageResponse>
+        </MessageContent>
+      );
+    }
+
+    return null;
   };
 
   const hasMessages = messages.length > 0;
@@ -305,10 +360,10 @@ export default function ChatPage({
                       const messageText = getMessageText(message);
                       const isAssistant = message.role === "assistant";
                       const isLastMessage = index === messages.length - 1;
-                      const isStreaming =
+                      const isCurrentlyStreaming =
                         uiStatus === "streaming" || uiStatus === "submitted";
                       const showCopyButton =
-                        messageText && !(isLastMessage && isStreaming);
+                        messageText && !(isLastMessage && isCurrentlyStreaming);
 
                       return (
                         <motion.div
@@ -332,48 +387,15 @@ export default function ChatPage({
                                   }
                                 >
                                   <div className="flex flex-col gap-3">
-                                    {getReasoningParts(message).map(
-                                      (part, idx) => (
-                                        <Reasoning
-                                          key={`reasoning-${message.id}-${idx}`}
-                                          duration={0}
-                                        >
-                                          <ReasoningTrigger />
-                                          <ReasoningContent>
-                                            {part.type === "reasoning"
-                                              ? part.text
-                                              : ""}
-                                          </ReasoningContent>
-                                        </Reasoning>
+                                    {/* Render parts in arrival order */}
+                                    {message.parts?.map((part, partIndex) =>
+                                      renderMessagePart(
+                                        part,
+                                        message,
+                                        partIndex,
+                                        isLastMessage,
+                                        isCurrentlyStreaming,
                                       ),
-                                    )}
-
-                                    {getServerToolParts(message).map(
-                                      (part, idx) => (
-                                        <ServerToolStatus
-                                          key={`server-${message.id}-${idx}`}
-                                          part={part}
-                                          toolKey={`server-${message.id}-${idx}`}
-                                        />
-                                      ),
-                                    )}
-
-                                    {getClientToolParts(message).map(
-                                      (part, idx) => (
-                                        <ClientToolUI
-                                          key={`client-${message.id}-${idx}`}
-                                          part={part}
-                                          toolKey={`client-${message.id}-${idx}`}
-                                        />
-                                      ),
-                                    )}
-
-                                    {messageText && (
-                                      <MessageContent>
-                                        <MessageResponse>
-                                          {messageText}
-                                        </MessageResponse>
-                                      </MessageContent>
                                     )}
 
                                     <AnimatePresence>
