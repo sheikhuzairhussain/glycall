@@ -237,7 +237,11 @@ export default function ChatPage({
         partIndex === (message.parts?.length ?? 0) - 1;
 
       return (
-        <Reasoning key={partKey} isStreaming={isReasoningStreaming}>
+        <Reasoning
+          key={partKey}
+          isStreaming={isReasoningStreaming}
+          defaultOpen={false}
+        >
           <ReasoningTrigger />
           <ReasoningContent>{part.text}</ReasoningContent>
         </Reasoning>
@@ -252,23 +256,13 @@ export default function ChatPage({
       // Server tools (show loading/done status)
       if (toolId in SERVER_TOOL_LABELS) {
         return (
-          <ServerToolStatus
-            key={partKey}
-            part={toolPart}
-            toolKey={partKey}
-          />
+          <ServerToolStatus key={partKey} part={toolPart} toolKey={partKey} />
         );
       }
 
       // Client tools (render custom UI)
       if (isClientToolId(toolId)) {
-        return (
-          <ClientToolUI
-            key={partKey}
-            part={toolPart}
-            toolKey={partKey}
-          />
-        );
+        return <ClientToolUI key={partKey} part={toolPart} toolKey={partKey} />;
       }
     }
 
